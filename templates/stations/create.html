@@ -2,9 +2,93 @@
 {% block title %}Add Station | Perspective Stream{% endblock %}
 {% block content %}
 <h1>Add a New Station</h1>
-<form method="post">
+<form id="station-form" method="post" novalidate>
     {% csrf_token %}
-    <!-- TODO: Add form fields for name, url, mount, enabled -->
-    <button type="submit">Add Station</button>
+    {{ form.non_field_errors }}
+    <div>
+        <label for="id_name">Name</label>
+        {{ form.name }}
+        {{ form.name.errors }}
+    </div>
+    <div>
+                <label for="id_url">Full Stream URL (optional)</label>
+        {{ form.url }}
+        {{ form.url.errors }}
+    </div>
+        <fieldset>
+                <legend>Or build from server fields</legend>
+                <div>
+                        <label for="id_protocol">Protocol</label>
+                        {{ form.protocol }}
+                        {{ form.protocol.errors }}
+                </div>
+                <div>
+                        <label for="id_host">Server Host</label>
+                        {{ form.host }}
+                        {{ form.host.errors }}
+                </div>
+                <div>
+                        <label for="id_port">Port</label>
+                        {{ form.port }}
+                        {{ form.port.errors }}
+                </div>
+    <div>
+        <label for="id_mount">Mount</label>
+        {{ form.mount }}
+        {{ form.mount.errors }}
+    </div>
+                <div>
+                        <label for="id_username">Username</label>
+                        {{ form.username }}
+                        {{ form.username.errors }}
+                </div>
+                <div>
+                        <label for="id_password">Password</label>
+                        {{ form.password }}
+                        {{ form.password.errors }}
+                </div>
+                <div>
+                        <label for="id_format">Format</label>
+                        {{ form.format }}
+                        {{ form.format.errors }}
+                </div>
+                <div>
+                        <label for="id_bitrate">Bitrate</label>
+                        {{ form.bitrate }}
+                        {{ form.bitrate.errors }}
+                </div>
+        </fieldset>
+    <div>
+        <label for="id_enabled">Enabled</label>
+        {{ form.enabled }}
+        {{ form.enabled.errors }}
+    </div>
+        <div style="margin-top: 1rem; display: flex; gap: .5rem;">
+                <button type="button" id="test-button">Test Connection</button>
+                <button type="submit">Add Station</button>
+        </div>
 </form>
+<p><a href="{% url 'stations:station_list' %}">Back to Stations</a></p>
+
+<script>
+document.getElementById('test-button').addEventListener('click', async () => {
+    const form = document.getElementById('station-form');
+    const formData = new FormData(form);
+    try {
+        const resp = await fetch('{% url "stations:station_test" %}', {
+            method: 'POST',
+            headers: { 'X-CSRFToken': formData.get('csrfmiddlewaretoken') },
+            body: formData
+        });
+        const data = await resp.json();
+        if (data.ok) {
+            alert(`OK (status ${data.status})\nContent-Type: ${data.content_type || 'unknown'}`); 
+        } else {
+            alert(`Failed: ${data.error || 'error'}\n${data.details || ''}`);
+        }
+    } catch (e) {
+        alert('Network error while testing stream.');
+    }
+});
+</script>
 {% endblock %}

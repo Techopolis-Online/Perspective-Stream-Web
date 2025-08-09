@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, Http404
 from django.urls import reverse_lazy, reverse
 from django.utils import timezone
 from .models import (CustomUser, UserProfile, EmailVerificationToken, 
@@ -23,17 +23,24 @@ class LoginView(auth_views.LoginView):
     def form_valid(self, form):
         """Override to handle 2FA requirements"""
         user = form.get_user()
+        # Ensure user is a CustomUser instance
+        if not hasattr(user, 'two_factor_enabled'):
+            try:
+                user = CustomUser.objects.get(pk=user.pk)
+            except CustomUser.DoesNotExist:
+                pass
         
         # Log the login attempt
+        two_factor_enabled = getattr(user, 'two_factor_enabled', False)
         LoginAttempt.objects.create(
             email=user.email,
             ip_address=self.request.META.get('REMOTE_ADDR', ''),
             user_agent=self.request.META.get('HTTP_USER_AGENT', ''),
-            status='success' if not user.two_factor_enabled else '2fa_required'
+            status='success' if not two_factor_enabled else '2fa_required'
         )
         
         # Check if user has 2FA enabled
-        if user.two_factor_enabled:
+        if two_factor_enabled:
             # Store user ID in session for 2FA verification
             self.request.session['2fa_user_id'] = str(user.id)
             messages.info(
@@ -41,7 +48,6 @@ class LoginView(auth_views.LoginView):
                 'Please complete two-factor authentication to finish logging in.'
             )
             return redirect('users:2fa_login')
-        
         # Regular login for users without 2FA
         return super().form_valid(form)
     
@@ -120,43 +126,16 @@ class DashboardView(LoginRequiredMixin, TemplateView):
         user = self.request.user
         
         # Basic user stats
+        # Add Perspective Stream stats
         context.update({
-            'shortcuts_count': user.shortcuts.count(),
-            'favorites_count': user.favorites.count(),
-            'reviews_count': user.reviews.count(),
-            'followers_count': user.followers.count(),
+            'followers_count': user.followers.count() if hasattr(user, 'followers') else 0,
             'following_count': user.profile.following.count() if hasattr(user, 'profile') else 0,
+            'broadcasts_count': user.broadcasts.count() if hasattr(user, 'broadcasts') else 0,
+            'stations_count': user.stations.count() if hasattr(user, 'stations') else 0,
+            'streams_count': user.streams.count() if hasattr(user, 'streams') else 0,
         })
         
-        # Add review functionality for reviewers and admins
-        if user.is_superuser or user.has_perm('shortcuts.change_shortcut'):
-            from shortcuts.models import Shortcut
-            from django.utils import timezone
-            
-            # Get shortcuts needing review
-            pending_shortcuts = Shortcut.objects.filter(
-                status__in=['pending', 'submitted', 'under_review', 'revision_requested']
-            ).select_related('user', 'category').order_by('-created_at')[:10]
-            
-            # Review statistics
-            review_stats = {
-                'pending_review': Shortcut.objects.filter(status='pending').count(),
-                'in_review': Shortcut.objects.filter(status='under_review').count(),
-                'approved_today': Shortcut.objects.filter(
-                    status='approved',
-                    approval_date__date=timezone.now().date()
-                ).count(),
-                'my_queue': Shortcut.objects.filter(
-                    reviewer=user,
-                    status__in=['under_review', 'assigned']
-                ).count(),
-            }
-            
-            context.update({
-                'is_reviewer': True,
-                'pending_shortcuts': pending_shortcuts,
-                'review_stats': review_stats,
-            })
+    # Removed all shortcut review functionality and legacy imports
         
         return context
 
@@ -266,9 +245,11 @@ class PasswordResetView(auth_views.PasswordResetView):
         # Determine if we should use HTTPS
         use_https = self.request.is_secure()
         
-        # Override for production domain - always use HTTPS for beyondthegallery.com
+        # Override for production domain - always use HTTPS for configured SITE_DOMAIN
         host = self.request.get_host()
-        if host == 'beyondthegallery.com' or host == 'www.beyondthegallery.com':
+        from django.conf import settings
+        site_domain = getattr(settings, 'SITE_DOMAIN', 'techopolis.app')
+        if host == site_domain or host == f'www.{site_domain}':
             use_https = True
         
         # Save the form and send email using email_service
@@ -440,14 +421,15 @@ class TOTPSetupView(LoginRequiredMixin, TemplateView):
         png_b64 = base64.b64encode(png_stream.getvalue()).decode("ascii")
         qr_code_data_uri = f"data:image/png;base64,{png_b64}"
         
+        from django.conf import settings
         context.update({
             'form': TOTPSetupForm(user=user, device=device),
             'device': device,
             'secret_key': device.key,
             'qr_code_svg': qr_code_svg,
             'provisioning_uri': provisioning_uri,
-            'issuer_name': 'Beyond the Gallery',
-            'account_name': f'{user.username}@beyondthegallery.com',
+            'issuer_name': getattr(settings, 'SITE_NAME', 'Perspective Stream'),
+            'account_name': f"{user.username}@{getattr(settings, 'SITE_DOMAIN', 'techopolis.app')}",
             'qr_code_data_uri': qr_code_data_uri,
         })
         
@@ -767,7 +749,6 @@ def unfollow_user(request, username):
 
 
 # Review Action Views for Dashboard
-from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.http import require_POST
@@ -781,16 +762,8 @@ def quick_approve_shortcut(request):
     if not (request.user.is_superuser or request.user.has_perm('shortcuts.change_shortcut')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
-    from shortcuts.models import Shortcut
-    shortcut_id = request.POST.get('shortcut_id')
-    shortcut = get_object_or_404(Shortcut, id=shortcut_id)
-    
-    shortcut.status = 'approved'
-    shortcut.reviewer = request.user
-    shortcut.approval_date = timezone.now()
-    shortcut.save()
-    
-    return JsonResponse({'success': True, 'message': 'Shortcut approved successfully'})
+    # Shortcuts app not installed; disable endpoint gracefully
+    return JsonResponse({'error': 'Shortcuts feature not available'}, status=404)
 
 @require_POST
 @csrf_exempt
@@ -799,19 +772,7 @@ def quick_reject_shortcut(request):
     if not (request.user.is_superuser or request.user.has_perm('shortcuts.change_shortcut')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
-    from shortcuts.models import Shortcut
-    shortcut_id = request.POST.get('shortcut_id')
-    rejection_reason = request.POST.get('rejection_reason', '')
-    
-    shortcut = get_object_or_404(Shortcut, id=shortcut_id)
-    
-    shortcut.status = 'rejected'
-    shortcut.reviewer = request.user
-    shortcut.rejection_reason = rejection_reason
-    shortcut.reviewed_at = timezone.now()
-    shortcut.save()
-    
-    return JsonResponse({'success': True, 'message': 'Shortcut rejected successfully'})
+    return JsonResponse({'error': 'Shortcuts feature not available'}, status=404)
 
 @require_POST
 @csrf_exempt
@@ -820,15 +781,7 @@ def assign_to_me(request):
     if not (request.user.is_superuser or request.user.has_perm('shortcuts.change_shortcut')):
         return JsonResponse({'error': 'Permission denied'}, status=403)
     
-    from shortcuts.models import Shortcut
-    shortcut_id = request.POST.get('shortcut_id')
-    shortcut = get_object_or_404(Shortcut, id=shortcut_id)
-    
-    shortcut.reviewer = request.user
-    shortcut.status = 'under_review'
-    shortcut.save()
-    
-    return JsonResponse({'success': True, 'message': 'Shortcut assigned to you for review'})
+    return JsonResponse({'error': 'Shortcuts feature not available'}, status=404)
 
 
 class MFAStatusView(LoginRequiredMixin, TemplateView):

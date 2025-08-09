@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Dashboard - Beyond the Gallery{% endblock %}
+{% block title %}Dashboard - Perspective Stream{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
             <h1>Welcome back, {{ user.get_full_name|default:user.username }}!</h1>
-            <p class="text-muted">Manage your shortcuts and account from your dashboard.</p>
+            <p class="text-muted">Manage your account and streaming activities from your dashboard.</p>
         </div>
     </div>
     
@@ -18,43 +18,43 @@
             <div class="card stats-card">
                 <div class="card-body text-center">
                     <div class="stats-icon">
-                        <i class="bi bi-lightning-charge display-4"></i>
-                    </div>
-                    <p class="stats-value">{{ shortcuts_count }}</p>
-                    <p class="stats-title mb-0">My Shortcuts</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon">
-                        <i class="bi bi-heart-fill display-4"></i>
-                    </div>
-                    <p class="stats-value">{{ favorites_count }}</p>
-                    <p class="stats-title mb-0">Favorites</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon">
-                        <i class="bi bi-star-fill display-4"></i>
-                    </div>
-                    <p class="stats-value">{{ reviews_count }}</p>
-                    <p class="stats-title mb-0">Reviews</p>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 mb-3">
-            <div class="card stats-card">
-                <div class="card-body text-center">
-                    <div class="stats-icon">
                         <i class="bi bi-people-fill display-4"></i>
                     </div>
                     <p class="stats-value">{{ followers_count }}</p>
                     <p class="stats-title mb-0">Followers</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon">
+                        <i class="bi bi-broadcast display-4 text-primary"></i>
+                    </div>
+                    <p class="stats-value">{{ broadcasts_count }}</p>
+                    <p class="stats-title mb-0">Broadcasts</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon">
+                        <i class="bi bi-radio display-4 text-info"></i>
+                    </div>
+                    <p class="stats-value">{{ stations_count }}</p>
+                    <p class="stats-title mb-0">Stations</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <div class="stats-icon">
+                        <i class="bi bi-camera-video display-4 text-success"></i>
+                    </div>
+                    <p class="stats-value">{{ streams_count }}</p>
+                    <p class="stats-title mb-0">Streams</p>
                 </div>
             </div>
         </div>
@@ -68,30 +68,30 @@
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <i class="bi bi-plus-circle display-4 text-primary mb-3"></i>
-                    <h3 class="card-title">Submit New Shortcut</h3>
-                    <p class="card-text">Share your latest iOS shortcut with the community.</p>
-                    <a href="{% url 'shortcuts:submit' %}" class="btn btn-primary">Submit Shortcut</a>
+                    <i class="bi bi-broadcast display-4 text-primary mb-3"></i>
+                    <h3 class="card-title">Start a Broadcast</h3>
+                    <p class="card-text">Go live and share your stream with your audience.</p>
+                    <a href="{% url 'broadcasts:broadcast_create' %}" class="btn btn-outline-primary">New Broadcast</a>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <i class="bi bi-grid display-4 text-secondary mb-3"></i>
-                    <h3 class="card-title">My Shortcuts</h3>
-                    <p class="card-text">View and manage all your submitted shortcuts.</p>
-                    <a href="{% url 'shortcuts:my_shortcuts' %}" class="btn btn-secondary">View My Shortcuts</a>
+                    <i class="bi bi-radio display-4 text-info mb-3"></i>
+                    <h3 class="card-title">Add a Station</h3>
+                    <p class="card-text">Manage your radio stations for streaming.</p>
+                    <a href="{% url 'stations:station_create' %}" class="btn btn-outline-info">Add Station</a>
                 </div>
             </div>
         </div>
         <div class="col-md-4 mb-3">
             <div class="card h-100">
                 <div class="card-body text-center">
-                    <i class="bi bi-heart display-4 text-danger mb-3"></i>
-                    <h3 class="card-title">My Favorites</h3>
-                    <p class="card-text">Access your favorite shortcuts from other users.</p>
-                    <a href="{% url 'users:favorites' %}" class="btn btn-outline-danger">View Favorites</a>
+                    <i class="bi bi-camera-video display-4 text-success mb-3"></i>
+                    <h3 class="card-title">View Streams</h3>
+                    <p class="card-text">See your active and past streams.</p>
+                    <!-- Streams view link removed until implemented -->
                 </div>
             </div>
         </div>
@@ -158,8 +158,7 @@
         <div class="col-12">
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
-                    <h3 class="mb-0">Shortcuts Needing Review</h3>
-                    <a href="{% url 'shortcuts:review_dashboard' %}" class="btn btn-outline-primary btn-sm" aria-label="View complete review dashboard">View All Reviews</a>
+                    <h3 class="mb-0">Items Needing Review</h3>
                 </div>
                 <div class="card-body">
                     {% if pending_shortcuts %}
@@ -176,53 +175,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {% for shortcut in pending_shortcuts %}
-                                    <tr>
-                                        <td>
-                                            <div class="d-flex align-items-center">
-                                                <div class="me-2">
-                                                    <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                                                        <i class="bi bi-lightning-charge text-white"></i>
-                                                    </div>
-                                                </div>
-                                                <div>
-                                                    <h6 class="mb-0">{{ shortcut.name }}</h6>
-                                                    <small class="text-muted">{{ shortcut.description|truncatechars:50 }}</small>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td>{{ shortcut.user.username }}</td>
-                                        <td>{{ shortcut.category.name|default:"Uncategorized" }}</td>
-                                        <td>
-                                            <span class="badge bg-warning">{{ shortcut.get_status_display }}</span>
-                                        </td>
-                                        <td>{{ shortcut.created_at|date:"M d, Y" }}</td>
-                                        <td>
-                                            <div class="btn-group" role="group" aria-label="Actions for shortcut {{ shortcut.name }}">
-                                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                                        onclick="assignToMe('{{ shortcut.id }}')"
-                                                        aria-label="Assign shortcut {{ shortcut.name }} to me for review">
-                                                    <i class="bi bi-person-check" aria-hidden="true"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-success" 
-                                                        onclick="quickApprove('{{ shortcut.id }}')"
-                                                        aria-label="Quick approve shortcut {{ shortcut.name }}">
-                                                    <i class="bi bi-check-lg" aria-hidden="true"></i>
-                                                </button>
-                                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                                        onclick="quickReject('{{ shortcut.id }}')"
-                                                        aria-label="Reject shortcut {{ shortcut.name }}">
-                                                    <i class="bi bi-x-lg" aria-hidden="true"></i>
-                                                </button>
-                                                <a href="{% url 'shortcuts:detail' shortcut.id %}" 
-                                                   class="btn btn-sm btn-outline-secondary"
-                                                   aria-label="View details of shortcut {{ shortcut.name }}">
-                                                    <i class="bi bi-eye" aria-hidden="true"></i>
-                                                </a>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                    {% endfor %}
+                                    <!-- Removed shortcut review table -->
                                 </tbody>
                             </table>
                         </div>
@@ -246,12 +199,11 @@
                     <h2 class="mb-0">Recent Activity</h2>
                 </div>
                 <div class="card-body">
-                    <p class="text-muted">Your recent shortcuts and activity will appear here.</p>
+                    <p class="text-muted">Your recent broadcasts, stations, and streams will appear here.</p>
                     <!-- Activity feed would go here -->
                     <div class="text-center py-4">
                         <i class="bi bi-clock display-1 text-muted"></i>
                         <p class="text-muted mt-3">No recent activity to show.</p>
-                        <a href="{% url 'shortcuts:browse' %}" class="btn btn-outline-primary" aria-label="Browse available shortcuts">Browse Shortcuts</a>
                     </div>
                 </div>
             </div>
@@ -287,171 +239,10 @@
     </section>
 </div>
 
-<!-- Quick Reject Modal -->
-<div class="modal fade" id="quickRejectModal" tabindex="-1" aria-labelledby="quickRejectModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="quickRejectModalLabel">Reject Shortcut</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close rejection modal"></button>
-            </div>
-            <div class="modal-body">
-                <form id="rejectionForm">
-                    <div class="mb-3">
-                        <label for="rejectionReason" class="form-label">Rejection Reason</label>
-                        <select id="rejectionReason" class="form-select" required aria-describedby="rejectionReasonHelp">
-                            <option value="">Select a reason...</option>
-                            <option value="missing_description">Missing or incomplete description</option>
-                            <option value="inappropriate_content">Inappropriate content</option>
-                            <option value="copyright_violation">Copyright violation</option>
-                            <option value="malicious_code">Potentially malicious code</option>
-                            <option value="duplicate_submission">Duplicate submission</option>
-                            <option value="incorrect_category">Incorrect category</option>
-                            <option value="file_format_error">File format error</option>
-                            <option value="compatibility_issues">Compatibility issues</option>
-                            <option value="quality_standards">Does not meet quality standards</option>
-                            <option value="testing_required">Requires additional testing</option>
-                            <option value="documentation_needed">Documentation needed</option>
-                            <option value="other">Other (please specify)</option>
-                        </select>
-                    </div>
-                    <div class="mb-3" id="customReasonContainer" style="display: none;">
-                        <label for="customReason" class="form-label">Please specify</label>
-                        <textarea id="customReason" class="form-control" rows="3" 
-                                  placeholder="Please provide more details about the rejection reason..."
-                                  aria-describedby="customReasonHelp"></textarea>
-                        <div id="customReasonHelp" class="form-text">Enter a custom rejection reason for the shortcut submission</div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="additionalComments" class="form-label">Additional Comments (Optional)</label>
-                        <textarea id="additionalComments" class="form-control" rows="3" 
-                                  placeholder="Any additional feedback for the submitter..."
-                                  aria-describedby="additionalCommentsHelp"></textarea>
-                        <div id="additionalCommentsHelp" class="form-text">Add optional feedback for the shortcut submitter</div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" aria-label="Cancel rejection">Cancel</button>
-                <button type="button" class="btn btn-danger" onclick="confirmReject()" aria-label="Confirm shortcut rejection">Reject Shortcut</button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- Removed Quick Reject Modal for shortcuts -->
 
 <script>
-// Review action functions
-let currentShortcutId = null;
-
-function assignToMe(shortcutId) {
-    if (confirm('Assign this shortcut to yourself for review?')) {
-        fetch('{% url "users:assign_to_me" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `shortcut_id=${shortcutId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('success', data.message);
-                location.reload();
-            } else {
-                showAlert('error', data.error || 'Failed to assign shortcut');
-            }
-        })
-        .catch(error => {
-            showAlert('error', 'Network error occurred');
-        });
-    }
-}
-
-function quickApprove(shortcutId) {
-    if (confirm('Are you sure you want to approve this shortcut?')) {
-        fetch('{% url "users:quick_approve" %}', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: `shortcut_id=${shortcutId}`
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('success', data.message);
-                location.reload();
-            } else {
-                showAlert('error', data.error || 'Failed to approve shortcut');
-            }
-        })
-        .catch(error => {
-            showAlert('error', 'Network error occurred');
-        });
-    }
-}
-
-function quickReject(shortcutId) {
-    currentShortcutId = shortcutId;
-    const modal = new bootstrap.Modal(document.getElementById('quickRejectModal'));
-    modal.show();
-}
-
-function confirmReject() {
-    const reason = document.getElementById('rejectionReason').value;
-    const customReason = document.getElementById('customReason').value;
-    const additionalComments = document.getElementById('additionalComments').value;
-    
-    if (!reason) {
-        showAlert('error', 'Please select a rejection reason');
-        return;
-    }
-    
-    if (reason === 'other' && !customReason) {
-        showAlert('error', 'Please specify the rejection reason');
-        return;
-    }
-    
-    let finalReason = reason;
-    if (reason === 'other') {
-        finalReason = customReason;
-    }
-    
-    if (additionalComments) {
-        finalReason += '\n\nAdditional Comments: ' + additionalComments;
-    }
-    
-    fetch('{% url "users:quick_reject" %}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `shortcut_id=${currentShortcutId}&rejection_reason=${encodeURIComponent(finalReason)}`
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            showAlert('success', data.message);
-            bootstrap.Modal.getInstance(document.getElementById('quickRejectModal')).hide();
-            location.reload();
-        } else {
-            showAlert('error', data.error || 'Failed to reject shortcut');
-        }
-    })
-    .catch(error => {
-        showAlert('error', 'Network error occurred');
-    });
-}
-
-// Show custom reason textarea when "Other" is selected
-document.getElementById('rejectionReason').addEventListener('change', function() {
-    const customContainer = document.getElementById('customReasonContainer');
-    if (this.value === 'other') {
-        customContainer.style.display = 'block';
-    } else {
-        customContainer.style.display = 'none';
-    }
-});
+// Removed shortcut review action functions
 
 // Alert function
 function showAlert(type, message) {

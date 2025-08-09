@@ -4,7 +4,102 @@
 <h1>Create a New Broadcast</h1>
 <form method="post">
     {% csrf_token %}
-    <!-- TODO: Add form fields for title, description, category, tags, start_time, privacy -->
+    {{ form.non_field_errors }}
+    <div>
+        <label for="id_title">Title</label>
+        {{ form.title }}
+        {{ form.title.errors }}
+    </div>
+    <div>
+        <label for="id_description">Description</label>
+        {{ form.description }}
+        {{ form.description.errors }}
+    </div>
+    <div>
+        <label for="id_category">Category</label>
+        {{ form.category }}
+        {{ form.category.errors }}
+    </div>
+    <div>
+        <label for="id_tags">Tags</label>
+        {{ form.tags }}
+        {{ form.tags.errors }}
+    </div>
+    <div>
+        <label for="id_start_time">Start Time</label>
+        {{ form.start_time }}
+        <small>{{ form.start_time.help_text }}</small>
+        {{ form.start_time.errors }}
+    </div>
+    <fieldset>
+        <legend>Destinations</legend>
+        <label>
+            {{ form.enable_radio }} Radio
+            <small>{{ form.enable_radio.help_text }}</small>
+        </label>
+        <br>
+        <label>
+            {{ form.enable_youtube }} YouTube
+            <small>{{ form.enable_youtube.help_text }}</small>
+        </label>
+        {{ form.enable_radio.errors }}
+        {{ form.enable_youtube.errors }}
+    </fieldset>
+    <div id="stationSelectWrapper" style="display:none; margin-top: .5rem;">
+        <label>Choose stations for this broadcast</label>
+        <br>
+        <select name="stations" id="id_stations" multiple size="5" style="min-width: 320px;">
+            {% for s in user_stations %}
+            <option value="{{ s.pk }}">{{ s.name }} — {{ s.stream_url }}</option>
+            {% empty %}
+            <option disabled>No stations configured. Add one under Stations.</option>
+            {% endfor %}
+        </select>
+        <div><small>Hold Ctrl/Cmd to select multiple</small></div>
+    </div>
+    <div>
+        <label for="id_go_live_now">Go Live Now</label>
+        {{ form.go_live_now }}
+        <small>{{ form.go_live_now.help_text }}</small>
+        {{ form.go_live_now.errors }}
+    </div>
+    <div>
+        <label for="id_privacy">Privacy</label>
+        {{ form.privacy }}
+        {{ form.privacy.errors }}
+    </div>
     <button type="submit">Create Broadcast</button>
+    <a href="{% url 'broadcasts:broadcast_list' %}">Cancel</a>
+    
 </form>
+<script>
+    (function() {
+        const goNow = document.getElementById('id_go_live_now');
+        const startTime = document.getElementById('id_start_time');
+        function toggleStartTime() {
+            if (!goNow || !startTime) return;
+            const disable = goNow.checked;
+            startTime.disabled = disable;
+            const container = startTime.closest('div');
+            if (container) {
+                container.style.opacity = disable ? 0.5 : 1;
+            }
+        }
+        if (goNow) {
+            goNow.addEventListener('change', toggleStartTime);
+            toggleStartTime();
+        }
+        // Show station selector when Radio is checked
+        const radioCheckbox = document.getElementById('id_enable_radio');
+        const wrapper = document.getElementById('stationSelectWrapper');
+        function toggleStations() {
+            if (!radioCheckbox || !wrapper) return;
+            wrapper.style.display = radioCheckbox.checked ? 'block' : 'none';
+        }
+        if (radioCheckbox) {
+            radioCheckbox.addEventListener('change', toggleStations);
+            toggleStations();
+        }
+    })();
+</script>
 {% endblock %}

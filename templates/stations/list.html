@@ -6,12 +6,22 @@
     {% for station in stations %}
     <li>
         <strong>{{ station.name }}</strong> ({{ station.mount }})<br>
-        {{ station.url }}<br>
-        <a href="#">Edit</a>
+        {% with built_url=station.build_stream_url %}
+            <div>
+                <small>URL:</small> {{ built_url|default:station.url|default:"(not set)" }}
+            </div>
+            <div>
+                <a href="{% url 'stations:station_test' %}?id={{ station.id }}" target="_blank">Test</a>
+                | <a href="#">Edit</a>
+            </div>
+            {% if station.connection_status and station.connection_status != 'unknown' %}
+                <div><small>Status:</small> {{ station.connection_status }}{% if station.last_tested_at %} at {{ station.last_tested_at }}{% endif %}</div>
+            {% endif %}
+        {% endwith %}
     </li>
     {% empty %}
     <li>No stations found.</li>
     {% endfor %}
 </ul>
-<a href="{% url 'station_create' %}">Add New Station</a>
+<a href="{% url 'stations:station_create' %}">Add New Station</a>
 {% endblock %}

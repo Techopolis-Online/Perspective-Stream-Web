@@ -1,5 +1,5 @@
 """
-Email utility functions for Beyond the Gallery
+Email utility functions for Perspective Stream
 """
 
 from django.core.mail import EmailMultiAlternatives

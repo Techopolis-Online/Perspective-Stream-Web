@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load widget_tweaks %}
 
-{% block title %}Two-Factor Authentication Backup Codes - Beyond the Gallery{% endblock %}
+{% block title %}Two-Factor Authentication Backup Codes - Perspective Stream{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -383,7 +383,7 @@ function copyAllCodes() {
 
 function downloadCodes() {
     const codes = Array.from(document.querySelectorAll('.backup-code')).map(el => el.dataset.code);
-    const content = `Beyond the Gallery - Two-Factor Authentication Backup Codes
+    const content = `Perspective Stream - Two-Factor Authentication Backup Codes
 Generated: ${new Date().toLocaleString()}
 User: {{ user.username }}
 
@@ -397,7 +397,7 @@ ${codes.map((code, index) => `${index + 1}. ${code}`).join('\n')}
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'beyondthegallery-backup-codes.txt';
+    a.download = 'perspectivestream-backup-codes.txt';
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

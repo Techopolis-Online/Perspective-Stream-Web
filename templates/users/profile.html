@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}'s Profile - Beyond the Gallery{% endblock %}
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}'s Profile - Perspective Stream{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
@@ -59,11 +59,7 @@
         <div class="col-md-3 mb-3">
             <div class="card stats-card text-center">
                 <div class="card-body">
-                    <div class="stats-icon">
-                        <i class="bi bi-lightning-charge display-4"></i>
-                    </div>
-                    <h3 class="stats-value">{{ profile_user.shortcuts.count }}</h3>
-                    <p class="stats-title mb-0">Shortcuts Shared</p>
+                    <!-- Removed shortcut stats -->
                 </div>
             </div>
         </div>
@@ -106,12 +102,7 @@
     <div class="row">
         <div class="col-12">
             <ul class="nav nav-tabs" id="profileTabs" role="tablist">
-                <li class="nav-item" role="presentation">
-                    <button class="nav-link active" id="shortcuts-tab" data-bs-toggle="tab" data-bs-target="#shortcuts" 
-                            type="button" role="tab" aria-controls="shortcuts" aria-selected="true">
-                        <i class="bi bi-lightning-charge me-1"></i>My Shortcuts
-                    </button>
-                </li>
+                <!-- Removed My Shortcuts tab -->
                 <li class="nav-item" role="presentation">
                     <button class="nav-link" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" 
                             type="button" role="tab" aria-controls="favorites" aria-selected="false">
@@ -133,43 +124,7 @@
             </ul>
             
             <div class="tab-content" id="profileTabsContent">
-                <!-- My Shortcuts Tab -->
-                <div class="tab-pane fade show active" id="shortcuts" role="tabpanel" aria-labelledby="shortcuts-tab">
-                    <div class="card">
-                        <div class="card-body">
-                            {% if profile_user.shortcuts.exists %}
-                                <div class="row">
-                                    {% for shortcut in profile_user.shortcuts.all|slice:":6" %}
-                                        <div class="col-md-4 mb-3">
-                                            <div class="card shortcut-card h-100">
-                                                <div class="card-body">
-                                                    <h6 class="card-title">{{ shortcut.name }}</h6>
-                                                    <p class="card-text text-muted small">{{ shortcut.description|truncatewords:15 }}</p>
-                                                    <div class="d-flex justify-content-between align-items-center">
-                                                        <small class="text-muted">{{ shortcut.download_count }} downloads</small>
-                                                        <a href="{% url 'shortcuts:detail' shortcut.id %}" class="btn btn-sm btn-outline-primary">View</a>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                                {% if profile_user.shortcuts.count > 6 %}
-                                    <div class="text-center mt-3">
-                                        <a href="{% url 'shortcuts:my_shortcuts' %}" class="btn btn-primary">View All My Shortcuts</a>
-                                    </div>
-                                {% endif %}
-                            {% else %}
-                                <div class="text-center py-5">
-                                    <i class="bi bi-lightning-charge display-1 text-muted"></i>
-                                    <h4 class="mt-3 text-muted">No shortcuts yet</h4>
-                                    <p class="text-muted">Start sharing your awesome shortcuts with the community!</p>
-                                    <a href="{% url 'shortcuts:submit' %}" class="btn btn-primary">Submit Your First Shortcut</a>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+                <!-- Removed My Shortcuts tab content -->
 
                 <!-- Favorites Tab -->
                 <div class="tab-pane fade" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
@@ -185,7 +140,7 @@
                                                     <p class="card-text text-muted small">{{ favorite.shortcut.description|truncatewords:15 }}</p>
                                                     <div class="d-flex justify-content-between align-items-center">
                                                         <small class="text-muted">by @{{ favorite.shortcut.user.username }}</small>
-                                                        <a href="{% url 'shortcuts:detail' favorite.shortcut.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                                        <!-- Removed shortcut detail link for favorites -->
                                                     </div>
                                                 </div>
                                             </div>
@@ -202,7 +157,7 @@
                                     <i class="bi bi-heart display-1 text-muted"></i>
                                     <h4 class="mt-3 text-muted">No favorites yet</h4>
                                     <p class="text-muted">Start exploring and favoriting shortcuts you love!</p>
-                                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                                    <!-- Removed Browse Shortcuts button -->
                                 </div>
                             {% endif %}
                         </div>
@@ -219,7 +174,7 @@
                                         <div class="d-flex justify-content-between align-items-start">
                                             <div>
                                                 <h6 class="mb-1">
-                                                    <a href="{% url 'shortcuts:detail' review.shortcut.id %}" class="text-decoration-none">
+                                                    <!-- Removed shortcut detail link for reviews -->
                                                         {{ review.shortcut.name }}
                                                     </a>
                                                 </h6>
@@ -248,7 +203,7 @@
                                     <i class="bi bi-star display-1 text-muted"></i>
                                     <h4 class="mt-3 text-muted">No reviews yet</h4>
                                     <p class="text-muted">Share your thoughts on shortcuts you've tried!</p>
-                                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                                    <!-- Removed Browse Shortcuts button -->
                                 </div>
                             {% endif %}
                         </div>

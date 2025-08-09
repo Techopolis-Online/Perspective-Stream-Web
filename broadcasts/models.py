@@ -1,6 +1,8 @@
 
 from django.db import models
 from users.models import CustomUser
+from stations.models import Station
+from youtube_integration.models import YouTubeChannel
 
 class Broadcast(models.Model):
 	PRIVACY_CHOICES = [
@@ -20,6 +22,12 @@ class Broadcast(models.Model):
 	youtube_id = models.CharField(max_length=128, blank=True)
 	radio_station = models.CharField(max_length=128, blank=True)
 	is_live = models.BooleanField(default=False)
+	# Destination flags
+	enable_radio = models.BooleanField(default=False)
+	enable_youtube = models.BooleanField(default=False)
+	# Selections
+	stations = models.ManyToManyField(Station, blank=True, related_name="broadcasts")
+	youtube_channels = models.ManyToManyField(YouTubeChannel, blank=True, related_name="broadcasts")
 
 	def __str__(self):
 		return self.title

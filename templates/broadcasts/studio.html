@@ -1,0 +1,405 @@
+{% extends "base.html" %}
+{% block title %}Studio | {{ broadcast.title }}{% endblock %}
+{% block content %}
+<h1>Studio: {{ broadcast.title }}</h1>
+
+<p>Status: {% if broadcast.is_live %}<span style="color:green">LIVE</span>{% else %}<span style="color:gray">Offline</span>{% endif %}</p>
+
+<form method="post" style="margin-bottom: 1rem;">
+  {% csrf_token %}
+  {% if broadcast.is_live %}
+    <button type="submit" name="action" value="end_live">End Stream</button>
+  {% else %}
+    <button type="submit" name="action" value="go_live">Go Live</button>
+  {% endif %}
+</form>
+
+<div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-start;">
+  <div>
+    <h3>Preview</h3>
+    <video id="preview" autoplay playsinline style="width: 480px; background:#000;" muted></video>
+    <div style="margin-top:0.5rem;">
+      <label>
+        Camera
+        <select id="cameraSelect"></select>
+      </label>
+      <label style="margin-left:1rem;">
+        Microphone
+        <select id="micSelect"></select>
+      </label>
+      <button id="applyDevices" type="button">Apply</button>
+      <button id="requestPerms" type="button" title="Request camera/mic access">Enable Devices</button>
+      <label style="margin-left:1rem;">
+        <input type="checkbox" id="toggleMute"> Mute preview
+      </label>
+      <div id="deviceErrors" role="alert" style="margin-top:.5rem;color:#f66;"></div>
+      <details style="margin-top:.5rem;">
+        <summary>Troubleshoot camera/mic</summary>
+        <ul>
+          <li>Allow camera and microphone permissions in your browser.</li>
+          <li>Close other apps using the devices (Teams, Zoom, OBS, etc.).</li>
+          <li>If on a non-local address, use HTTPS or 127.0.0.1.</li>
+          <li>Try switching devices with the selectors above.</li>
+        </ul>
+      </details>
+    </div>
+  </div>
+  <div>
+    <h3>Notes</h3>
+    <ul>
+      <li>This MVP shows your local camera/mic. Streaming destinations will be wired next.</li>
+      <li>When you click Go Live, the broadcast is marked live in the database.</li>
+      <li>Now connects to a LiveKit room for browser-based streaming (no RTMP).</li>
+    </ul>
+  </div>
+  {% if broadcast.enable_radio %}
+  <div>
+    <h3>Radio Mix (Stations)</h3>
+    {% if broadcast.stations.all %}
+      <ul>
+        {% for s in broadcast.stations.all %}
+          <li>
+            {{ s.name }} — <small>{{ s.stream_url }}</small>
+            <button type="button" class="playStation" data-url="{{ s.stream_url }}">Play</button>
+            <form method="post" style="display:inline; margin-left: .5rem;">
+              {% csrf_token %}
+              <input type="hidden" name="station_id" value="{{ s.pk }}" />
+              <button type="submit" name="action" value="detach_station">Detach</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+      <audio id="radioPlayer" crossorigin="anonymous"></audio>
+    {% else %}
+      <p>No stations attached to this broadcast. Choose one:</p>
+      <select id="studioStationSelect">
+        {% for s in user_stations %}
+          <option value="{{ s.stream_url }}" data-id="{{ s.pk }}">{{ s.name }} — {{ s.stream_url }}</option>
+        {% empty %}
+          <option disabled>No stations configured. Add one under Stations.</option>
+        {% endfor %}
+      </select>
+      <button type="button" id="playSelectedStation">Play Selected</button>
+      <form id="attachStationForm" method="post" style="display:inline; margin-left: .5rem;">
+        {% csrf_token %}
+        <input type="hidden" name="station_id" id="attach_station_id" />
+        <button type="submit" name="action" value="attach_station">Attach</button>
+      </form>
+      <audio id="radioPlayer" crossorigin="anonymous"></audio>
+    {% endif %}
+    <div style="margin-top:.5rem;">
+      <button type="button" id="stopRadio">Stop Radio</button>
+      <label style="margin-left:1rem;">Mic volume <input id="micVolume" type="range" min="0" max="2" value="1" step="0.01"></label>
+      <label style="margin-left:1rem;">Radio volume <input id="radioVolume" type="range" min="0" max="2" value="0.7" step="0.01"></label>
+    </div>
+  </div>
+  {% endif %}
+  
+</div>
+
+<script>
+  const preview = document.getElementById('preview');
+  const cameraSelect = document.getElementById('cameraSelect');
+  const micSelect = document.getElementById('micSelect');
+  const applyBtn = document.getElementById('applyDevices');
+  const requestPermsBtn = document.getElementById('requestPerms');
+  const toggleMute = document.getElementById('toggleMute');
+  const deviceErrors = document.getElementById('deviceErrors');
+  let currentStream;
+  let lkRoom;
+  let mixedAudioTrack;
+  let audioCtx, micStream, micSource, radioSource, destination, micGain, radioGain;
+  let screenTrack;
+
+  async function listDevices() {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const cams = devices.filter(d => d.kind === 'videoinput');
+    const mics = devices.filter(d => d.kind === 'audioinput');
+    cameraSelect.innerHTML = '';
+    micSelect.innerHTML = '';
+    cams.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.text = d.label || `Camera ${i+1}`;
+      cameraSelect.appendChild(opt);
+    });
+    mics.forEach((d, i) => {
+      const opt = document.createElement('option');
+      opt.value = d.deviceId;
+      opt.text = d.label || `Microphone ${i+1}`;
+      micSelect.appendChild(opt);
+    });
+  }
+
+  function setDeviceError(msg) {
+    if (deviceErrors) deviceErrors.textContent = msg || '';
+  }
+
+  async function startPreview() {
+    try {
+      if (currentStream) {
+        currentStream.getTracks().forEach(t => t.stop());
+      }
+      const constraints = {
+        video: cameraSelect.value ? { deviceId: { exact: cameraSelect.value } } : true,
+        audio: micSelect.value ? { deviceId: { exact: micSelect.value } } : true,
+      };
+      let stream;
+      try {
+        stream = await navigator.mediaDevices.getUserMedia(constraints);
+      } catch (err) {
+        // Retry without deviceId if Overconstrained or NotFound
+        if (err && (err.name === 'OverconstrainedError' || err.name === 'NotFoundError')) {
+          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        } else {
+          throw err;
+        }
+      }
+      currentStream = stream;
+      preview.srcObject = stream;
+      setDeviceError('');
+      // refresh device labels now that permissions granted
+      await listDevices();
+    } catch (e) {
+      console.error('Failed to start preview', e);
+      let msg = 'Could not access camera/microphone.';
+      if (e && e.name === 'NotAllowedError') msg = 'Permission denied. Please allow camera/microphone.';
+      if (e && e.name === 'NotFoundError') msg = 'No camera/microphone found. Plug in a device or choose another.';
+      if (e && e.name === 'NotReadableError') msg = 'Device busy. Close other apps using camera/mic and retry.';
+      if (e && e.message) msg += ' (' + e.message + ')';
+      setDeviceError(msg);
+    }
+  }
+
+  applyBtn.addEventListener('click', startPreview);
+  toggleMute.addEventListener('change', () => {
+    preview.muted = toggleMute.checked;
+  });
+
+  // Explicit permission request button to surface browser prompt
+  requestPermsBtn?.addEventListener('click', async () => {
+    try {
+      await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      await listDevices();
+      await startPreview();
+      setDeviceError('');
+    } catch (e) {
+      console.error('Permission request failed', e);
+      setDeviceError('Permission request failed. Check browser settings.');
+    }
+  });
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+  }
+
+  async function fetchLiveKitToken() {
+    try {
+      const res = await fetch('{% url "api:livekit_token" %}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken') },
+        body: JSON.stringify({ broadcast_id: {{ broadcast.pk }} })
+      });
+      if (!res.ok) throw new Error('Token request failed');
+      return await res.json();
+    } catch (e) {
+      console.error(e);
+      return null;
+    }
+  }
+
+  async function connectLiveKit() {
+    // Lazy load LiveKit JS if not present
+    if (!window.LivekitClient) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://unpkg.com/livekit-client/dist/livekit-client.umd.min.js';
+        s.onload = resolve; s.onerror = reject; document.head.appendChild(s);
+      });
+    }
+    const info = await fetchLiveKitToken();
+    if (!info || !info.url || !info.token) {
+      console.warn('LiveKit not configured; skipping connect');
+      return;
+    }
+  const { Room, RoomEvent, LocalAudioTrack, LocalVideoTrack } = window.LivekitClient;
+    lkRoom = new Room();
+    lkRoom.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+      if (track.kind === 'video') {
+        // Optionally render remote tracks (e.g., guests) later
+      }
+    });
+    await lkRoom.connect(info.url, info.token);
+    // Create local tracks using current devices
+    const tracks = [];
+    try {
+      const vt = await LocalVideoTrack.create({ deviceId: cameraSelect.value || undefined });
+      tracks.push(vt);
+    } catch {}
+    try {
+      // If we already created a mixed audio track (mic + radio), use it; else mic only
+      if (mixedAudioTrack) {
+        tracks.push(mixedAudioTrack);
+      } else {
+        const at = await LocalAudioTrack.create({ deviceId: micSelect.value || undefined });
+        tracks.push(at);
+      }
+    } catch {}
+    for (const t of tracks) {
+      await lkRoom.localParticipant.publishTrack(t);
+    }
+  }
+
+  // Radio play handlers (if present)
+  document.querySelectorAll('.playStation').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const url = btn.getAttribute('data-url');
+      if (!url) return;
+      await startRadioMix(url);
+    });
+  });
+
+  const playSelected = document.getElementById('playSelectedStation');
+  if (playSelected) {
+    playSelected.addEventListener('click', async () => {
+      const sel = document.getElementById('studioStationSelect');
+      if (!sel || !sel.value) return;
+      await startRadioMix(sel.value);
+    });
+  }
+
+  async function startRadioMix(url) {
+    const player = document.getElementById('radioPlayer');
+    try {
+      player.src = url;
+      await player.play();
+    } catch (e) {
+      alert('Could not play station: ' + e.message);
+      return;
+    }
+    try {
+      // Create or reuse mixed audio graph: microphone + radio stream using Web Audio API
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (!micStream) micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      if (!destination) destination = audioCtx.createMediaStreamDestination();
+      // Build mic nodes once
+      if (!micSource) {
+        micSource = audioCtx.createMediaStreamSource(micStream);
+        micGain = audioCtx.createGain();
+        micGain.gain.value = parseFloat(document.getElementById('micVolume')?.value || '1');
+        micSource.connect(micGain).connect(destination);
+      }
+      // Recreate radio source each time for the current element
+      radioSource = audioCtx.createMediaElementSource(player);
+      radioGain = audioCtx.createGain();
+      radioGain.gain.value = parseFloat(document.getElementById('radioVolume')?.value || '0.7');
+      radioSource.connect(radioGain).connect(destination);
+      const mixedStream = destination.stream;
+      // Replace published audio track in LiveKit (if connected)
+      const { LocalAudioTrack } = window.LivekitClient;
+      const newTrack = new LocalAudioTrack(mixedStream.getAudioTracks()[0]);
+      mixedAudioTrack = newTrack;
+      if (lkRoom && lkRoom.state === 'connected') {
+        // Unpublish existing audio, publish new
+        for (const pub of lkRoom.localParticipant.trackPublications.values()) {
+          if (pub.kind === 'audio') {
+            await lkRoom.localParticipant.unpublishTrack(pub.track);
+          }
+        }
+        await lkRoom.localParticipant.publishTrack(newTrack);
+      }
+    } catch (e) {
+      console.error('Mixing failed', e);
+    }
+  }
+
+  // Stop radio playback and revert to mic-only audio if connected
+  document.getElementById('stopRadio')?.addEventListener('click', async () => {
+    const player = document.getElementById('radioPlayer');
+    try { player.pause(); player.src = ''; } catch {}
+    if (!lkRoom || lkRoom.state !== 'connected' || !window.LivekitClient) return;
+    try {
+      const { LocalAudioTrack } = window.LivekitClient;
+      const micOnly = await LocalAudioTrack.create({ deviceId: micSelect.value || undefined });
+      for (const pub of lkRoom.localParticipant.trackPublications.values()) {
+        if (pub.kind === 'audio') await lkRoom.localParticipant.unpublishTrack(pub.track);
+      }
+      await lkRoom.localParticipant.publishTrack(micOnly);
+      mixedAudioTrack = null;
+    } catch (e) {
+      console.error('Failed to revert audio track', e);
+    }
+  });
+
+  // Volume controls
+  document.getElementById('micVolume')?.addEventListener('input', (e) => {
+    if (micGain) micGain.gain.value = parseFloat(e.target.value);
+  });
+  document.getElementById('radioVolume')?.addEventListener('input', (e) => {
+    if (radioGain) radioGain.gain.value = parseFloat(e.target.value);
+  });
+
+  // Attach station form hidden value sync
+  (function syncAttachHidden() {
+    const sel = document.getElementById('studioStationSelect');
+    const hidden = document.getElementById('attach_station_id');
+    if (!sel || !hidden) return;
+    const update = () => {
+      const opt = sel.options[sel.selectedIndex];
+      hidden.value = opt ? (opt.dataset.id || '') : '';
+    };
+    sel.addEventListener('change', update);
+    update();
+  })();
+
+  // Optional: add a simple screen share button next to the title
+  (function addScreenShareButton() {
+    const h1 = document.querySelector('h1');
+    if (!h1) return;
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = 'Share Screen';
+    btn.style.marginLeft = '1rem';
+    btn.addEventListener('click', async () => {
+      if (!window.LivekitClient || !lkRoom) return;
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+        const track = new window.LivekitClient.LocalVideoTrack(stream.getVideoTracks()[0]);
+        // Swap current video with screen
+        for (const pub of lkRoom.localParticipant.trackPublications.values()) {
+          if (pub.kind === 'video') await lkRoom.localParticipant.unpublishTrack(pub.track);
+        }
+        await lkRoom.localParticipant.publishTrack(track);
+        screenTrack = track;
+      } catch (e) {
+        console.error('Screen share failed', e);
+      }
+    });
+    h1.after(btn);
+  })();
+
+  (async () => {
+    // Basic diagnostics for permissions issues
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setDeviceError('This browser does not support camera/microphone access.');
+      }
+      const isLocalhost = /^(localhost|127\.0\.0\.1)$/i.test(location.hostname);
+      if (!window.isSecureContext && !isLocalhost) {
+        setDeviceError('Use HTTPS (or 127.0.0.1) to access camera/microphone.');
+      }
+    } catch {}
+
+    // Try to warm up permissions; if blocked, user can click Enable Devices
+    try { await navigator.mediaDevices.getUserMedia({ video: true, audio: true }); } catch (_) {}
+    await listDevices();
+    await startPreview();
+    // Connect to LiveKit for in-browser publishing (no RTMP)
+    await connectLiveKit();
+    toggleMute.checked = true; // prevent echo
+    preview.muted = true;
+  })();
+</script>
+{% endblock %}

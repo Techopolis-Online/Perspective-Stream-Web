@@ -63,13 +63,12 @@ class CustomPasswordResetForm(PasswordResetForm):
             # Use dynamic domain detection when available
             if request and getattr(settings, 'USE_DYNAMIC_DOMAIN', True):
                 domain = request.get_host()
-                # Clean up domain to remove port for display purposes in some cases
-                # but keep it for the actual links to work correctly
-                site_name = 'Beyond the Gallery'
+                # Use configured brand name
+                site_name = getattr(settings, 'SITE_NAME', 'Perspective Stream')
             else:
                 # Fallback to SITE_DOMAIN setting
-                domain = getattr(settings, 'SITE_DOMAIN', 'beyondthegallery.com')
-                site_name = 'Beyond the Gallery'
+                domain = getattr(settings, 'SITE_DOMAIN', 'techopolis.app')
+                site_name = getattr(settings, 'SITE_NAME', 'Perspective Stream')
         else:
             site_name = domain = domain_override
         
@@ -80,8 +79,10 @@ class CustomPasswordResetForm(PasswordResetForm):
                 use_https = True
             elif domain in ['localhost', '127.0.0.1'] or ':' in domain:  # Handle localhost with ports
                 use_https = False
-            elif (domain in ['beyondthegallery.com', 'www.beyondthegallery.com'] and 
-                  getattr(settings, 'FORCE_HTTPS_PRODUCTION', True)):
+            elif (
+                domain in [getattr(settings, 'SITE_DOMAIN', 'techopolis.app'), f"www.{getattr(settings, 'SITE_DOMAIN', 'techopolis.app')}"]
+                and getattr(settings, 'FORCE_HTTPS_PRODUCTION', True)
+            ):
                 use_https = True
             else:
                 use_https = False  # Default to HTTP for development/unknown domains

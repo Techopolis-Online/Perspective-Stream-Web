@@ -21,7 +21,7 @@ class CustomUserAdmin(UserAdmin):
     readonly_fields = ['id', 'date_joined', 'last_login', 'created_at', 'updated_at']
     
     fieldsets = UserAdmin.fieldsets + (
-        ('Beyond the Gallery Info', {
+    ('Perspective Stream Info', {
             'fields': ('full_name', 'role', 'status', 'email_verified_at')
         }),
         ('Device Information', {

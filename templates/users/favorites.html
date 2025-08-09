@@ -1,14 +1,14 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}My Favorites - Beyond the Gallery{% endblock %}
+{% block title %}My Favorites - Perspective Stream{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
     <div class="row">
         <div class="col-12">
-            <h1 class="mb-4">My Favorite Shortcuts</h1>
-            <p class="text-muted">Here are all the shortcuts you've marked as your favorites.</p>
+            <h1 class="mb-4">My Favorites</h1>
+            <p class="text-muted">Here are all the items you've marked as your favorites.</p>
         </div>
     </div>
     
@@ -29,7 +29,7 @@
                     </div>
                     <div class="card-body shortcut-content">
                         <h2 class="card-title shortcut-title h5">
-                            <a href="{% url 'shortcuts:detail' favorite.shortcut.id %}" class="shortcut-link" id="shortcut-{{ favorite.shortcut.id }}-title">{{ favorite.shortcut.name }}</a>
+                            <!-- Removed shortcut detail link for favorites -->
                         </h2>
                         <p class="card-text shortcut-excerpt">{{ favorite.shortcut.description|truncatewords:6 }}</p>
                         <div class="shortcut-meta">
@@ -49,9 +49,9 @@
             <div class="col-12">
                 <div class="text-center py-5">
                     <i class="bi bi-heart-fill display-1 text-muted" aria-hidden="true"></i>
-                    <h3 class="mt-3 text-muted">You haven't favorited any shortcuts yet.</h3>
-                    <p class="text-muted">Browse our collection and add some shortcuts to your favorites!</p>
-                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                    <h3 class="mt-3 text-muted">You haven't favorited any items yet.</h3>
+                    <p class="text-muted">Browse our collection and add some items to your favorites!</p>
+                    <!-- Removed Browse Shortcuts button -->
                 </div>
             </div>
         {% endfor %}
@@ -254,7 +254,7 @@
                 const card = this.closest('.col-12, .col-sm-6, .col-md-4, .col-lg-3, .col-xl-2');
                 
                 // Send AJAX request to toggle_favorite endpoint
-                fetch(`/shortcuts/${shortcutId}/favorite/`, {
+                // Removed shortcut favorite fetch
                     method: 'POST',
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
@@ -276,9 +276,9 @@
                                 <div class="col-12">
                                     <div class="text-center py-5">
                                         <i class="bi bi-heart-fill display-1 text-muted" aria-hidden="true"></i>
-                                        <h3 class="mt-3 text-muted">You haven't favorited any shortcuts yet.</h3>
-                                        <p class="text-muted">Browse our collection and add some shortcuts to your favorites!</p>
-                                        <a href="/shortcuts/browse/" class="btn btn-primary">Browse Shortcuts</a>
+                                        <h3 class="mt-3 text-muted">You haven't favorited any items yet.</h3>
+                                        <p class="text-muted">Browse our collection and add some items to your favorites!</p>
+                                        <!-- Removed Browse Shortcuts button -->
                                     </div>
                                 </div>
                             `;

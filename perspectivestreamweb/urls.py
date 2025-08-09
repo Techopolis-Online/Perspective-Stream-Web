@@ -28,8 +28,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", home, name="home"),
     path("dashboard/", include("chat.urls")),
-    path("broadcasts/", include("broadcasts.urls")),
+    # Namespace broadcasts to allow `{% url 'broadcasts:...' %}` usage in templates
+    path("broadcasts/", include(("broadcasts.urls", "broadcasts"), namespace="broadcasts")),
+    path("api/", include(("api.urls", "api"), namespace="api")),
     path("stations/", include("stations.urls")),
     path("settings/", include("alerts.urls")),
     path("users/", include("users.urls")),
+    path("legal/", include("legal.urls", namespace="legal")),
 ]

@@ -1,3 +1,39 @@
+from django.contrib.auth import SESSION_KEY, get_user_model
+
+
+class SessionUserPKCompatibilityMiddleware:
+    """
+    Clears stale auth sessions created under a different AUTH_USER_MODEL PK type.
+
+    Scenario: Switched from int PK (auth.User) to UUID PK (users.CustomUser).
+    Old sessions store an integer in session[SESSION_KEY] (e.g., "1"), which
+    Django will try to cast to UUID and raise ValidationError on access.
+
+    This middleware runs before AuthenticationMiddleware and, if the stored
+    auth user id cannot be parsed as the current model's PK type, it flushes the
+    session so the request becomes anonymous and redirects will work instead of erroring.
+    """
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        try:
+            if SESSION_KEY in request.session:
+                user_model = get_user_model()
+                pk_field = user_model._meta.pk
+                raw_id = request.session.get(SESSION_KEY)
+                # Attempt to coerce the stored id into the current PK type
+                try:
+                    pk_field.to_python(raw_id)
+                except Exception:
+                    # Invalid for current PK type — clear session to avoid UUID errors
+                    request.session.flush()
+        except Exception:
+            # Never block the request due to middleware errors
+            pass
+
+        return self.get_response(request)
 """
 2FA Enforcement Middleware
 """

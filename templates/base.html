@@ -29,10 +29,17 @@
         </ul>
     </nav>
     <main id="main-content" tabindex="-1">
+        {% if messages %}
+        <div class="messages" role="status" aria-live="polite">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% block content %}{% endblock %}
     </main>
     <footer>
-        <p>&copy; 2025 Perspective Stream. All rights reserved.</p>
+    <p>&copy; 2025 Techopolis Online Solutions, LLC. All rights reserved.</p>
     </footer>
     <script src="{% static 'js/theme.js' %}"></script>
     {% block scripts %}{% endblock %}

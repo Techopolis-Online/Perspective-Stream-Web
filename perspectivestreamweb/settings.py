@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,6 +55,8 @@ INSTALLED_APPS += [
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    # Flush incompatible auth sessions (UUID vs int) before auth processing
+    "users.middleware.SessionUserPKCompatibilityMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -130,7 +133,40 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+# Email configuration
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "mail.techopolis.app"
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = "stream@techopolis.app"
+EMAIL_HOST_PASSWORD = "mEerxmmqF};~Xn1+"
+DEFAULT_FROM_EMAIL = "stream@techopolis.app"
+
+# Branding
+SITE_NAME = "Perspective Stream"
+SITE_DOMAIN = "techopolis.app"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Use custom user model
+AUTH_USER_MODEL = "users.CustomUser"
+
+# Authentication configuration
+# Use our custom backend (username or email) and fall back to default
+AUTHENTICATION_BACKENDS = [
+    "users.backends.UsernameOrEmailBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Login/Logout redirects and URL
+LOGIN_URL = "/users/login/"
+LOGIN_REDIRECT_URL = "/users/dashboard/"
+LOGOUT_REDIRECT_URL = "/"
+
+# LiveKit configuration (set via environment variables)
+LIVEKIT_URL = os.environ.get("LIVEKIT_URL")  # e.g., wss://yourdomain.livekit.cloud
+LIVEKIT_API_KEY = os.environ.get("LIVEKIT_API_KEY")
+LIVEKIT_API_SECRET = os.environ.get("LIVEKIT_API_SECRET")
