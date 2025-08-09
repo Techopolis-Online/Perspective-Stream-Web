@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Help Articles - Beyond the Gallery{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h1>Manage Help Articles</h1>
+        </div>
+        <div class="col-md-6 text-end">
+            <a href="{% url 'users:help_article_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Create New Article
+            </a>
+            <a href="{% url 'users:help' %}" class="btn btn-outline-secondary ms-2">
+                <i class="bi bi-eye"></i> View Help Center
+            </a>
+        </div>
+    </div>
+    
+    <!-- Filter Controls -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                <input type="text" id="articleSearch" class="form-control" placeholder="Search articles...">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="categoryFilter" class="form-select">
+                                <option value="">All Categories</option>
+                                {% for cat_key, cat_name in articles.0.CATEGORY_CHOICES %}
+                                    <option value="{{ cat_key }}">{{ cat_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="statusFilter" class="form-select">
+                                <option value="">All Statuses</option>
+                                <option value="published">Published</option>
+                                <option value="draft">Draft</option>
+                                <option value="featured">Featured</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button id="resetFilters" class="btn btn-outline-secondary w-100">Reset</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Articles Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Last Updated</th>
+                        <th>Order</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                    <tr data-category="{{ article.category }}" 
+                        data-status="{% if article.published %}published{% else %}draft{% endif %}{% if article.featured %} featured{% endif %}">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="article-icon me-2">
+                                    {% if article.category == 'basics' %}
+                                        <i class="bi bi-book text-info"></i>
+                                    {% elif article.category == 'creating' %}
+                                        <i class="bi bi-lightning-charge text-warning"></i>
+                                    {% elif article.category == 'advanced' %}
+                                        <i class="bi bi-gear-wide-connected text-danger"></i>
+                                    {% elif article.category == 'troubleshooting' %}
+                                        <i class="bi bi-wrench text-success"></i>
+                                    {% else %}
+                                        <i class="bi bi-question-circle text-muted"></i>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <a href="{% url 'users:help_article_detail' article.slug %}" class="text-decoration-none article-title">
+                                        {{ article.title }}
+                                    </a>
+                                    <div class="text-muted small">{{ article.slug }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            {% for cat_key, cat_name in article.CATEGORY_CHOICES %}
+                                {% if cat_key == article.category %}
+                                    {{ cat_name }}
+                                {% endif %}
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% if article.published %}
+                                <span class="badge bg-success">Published</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Draft</span>
+                            {% endif %}
+                            
+                            {% if article.featured %}
+                                <span class="badge bg-warning text-dark">Featured</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ article.updated_at|date:"M j, Y" }}</td>
+                        <td>{{ article.order }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'users:help_article_update' article.slug %}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-pencil"></i> Edit
+                                </a>
+                                <a href="{% url 'users:help_article_detail' article.slug %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i> View
+                                </a>
+                                <a href="{% url 'users:help_article_delete' article.slug %}" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4">
+                            <div class="py-5">
+                                <i class="bi bi-journal-text display-4 text-muted mb-3"></i>
+                                <h3>No articles found</h3>
+                                <p class="text-muted">Get started by creating your first help article.</p>
+                                <a href="{% url 'users:help_article_create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Create New Article
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('articleSearch');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const statusFilter = document.getElementById('statusFilter');
+    const resetButton = document.getElementById('resetFilters');
+    const articleRows = document.querySelectorAll('tbody tr');
+    
+    function filterArticles() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const categoryValue = categoryFilter.value;
+        const statusValue = statusFilter.value;
+        
+        articleRows.forEach(row => {
+            const title = row.querySelector('.article-title').textContent.toLowerCase();
+            const category = row.dataset.category;
+            const status = row.dataset.status;
+            
+            const matchesSearch = title.includes(searchTerm);
+            const matchesCategory = !categoryValue || category === categoryValue;
+            const matchesStatus = !statusValue || status.includes(statusValue);
+            
+            if (matchesSearch && matchesCategory && matchesStatus) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    searchInput.addEventListener('keyup', filterArticles);
+    categoryFilter.addEventListener('change', filterArticles);
+    statusFilter.addEventListener('change', filterArticles);
+    
+    resetButton.addEventListener('click', function() {
+        searchInput.value = '';
+        categoryFilter.value = '';
+        statusFilter.value = '';
+        filterArticles();
+    });
+});
+</script>
+{% endblock %}

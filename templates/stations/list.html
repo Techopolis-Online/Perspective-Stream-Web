@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Stations | Perspective Stream{% endblock %}
+{% block content %}
+<h1>Your Stations</h1>
+<ul>
+    {% for station in stations %}
+    <li>
+        <strong>{{ station.name }}</strong> ({{ station.mount }})<br>
+        {{ station.url }}<br>
+        <a href="#">Edit</a>
+    </li>
+    {% empty %}
+    <li>No stations found.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'station_create' %}">Add New Station</a>
+{% endblock %}

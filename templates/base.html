@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Perspective Stream{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/base.css' %}">
+    <link rel="icon" href="{% static 'img/favicon.ico' %}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <nav aria-label="Main Navigation">
+        <a href="/" class="logo" aria-label="Home">
+            <img src="{% static 'img/logo.png' %}" alt="Perspective Stream Logo" height="40">
+        </a>
+        <ul>
+            {% if user.is_authenticated %}
+                <li><a href="{% url 'users:dashboard' %}">Dashboard</a></li>
+                <li><a href="/broadcasts/">Broadcasts</a></li>
+                <li><a href="/stations/">Stations</a></li>
+                <li><a href="{% url 'users:settings' %}">Settings</a></li>
+                <li><a href="{% url 'users:profile' %}">Profile</a></li>
+                <li><a href="{% url 'users:logout' %}">Logout</a></li>
+            {% else %}
+                <li><a href="/">Home</a></li>
+                <li><a href="{% url 'users:login' %}">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <main id="main-content" tabindex="-1">
+        {% block content %}{% endblock %}
+    </main>
+    <footer>
+        <p>&copy; 2025 Perspective Stream. All rights reserved.</p>
+    </footer>
+    <script src="{% static 'js/theme.js' %}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

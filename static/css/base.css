@@ -1,0 +1,97 @@
+/* Base styles for Perspective Stream - WCAG AA compliant */
+
+:root {
+    color-scheme: dark;
+    --background-dark: #181a1b;
+    --text-dark: #f8f9fa;
+    --accent: #0057b8;
+    --focus: #ffbf47;
+    --card-bg: #23272a;
+    --input-bg: #222;
+    --input-border: #444;
+}
+html, body {
+    background: var(--background-dark);
+    color: var(--text-dark);
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 0;
+    min-height: 100vh;
+}
+nav {
+    background: var(--card-bg);
+    color: var(--text-dark);
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-bottom: 1px solid var(--input-border);
+}
+nav .logo img {
+    vertical-align: middle;
+}
+nav ul {
+    list-style: none;
+    display: flex;
+    gap: 1rem;
+    margin: 0;
+    padding: 0;
+}
+nav a {
+    color: var(--text-dark);
+    text-decoration: none;
+    font-weight: 600;
+    padding: 0.25rem 0.75rem;
+    border-radius: 4px;
+    transition: background 0.2s;
+}
+nav a:hover, nav a:focus {
+    background: var(--accent);
+    color: #fff;
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+}
+main {
+    padding: 2rem 1rem;
+}
+form {
+    background: var(--card-bg);
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    max-width: 400px;
+    margin: 2rem auto;
+}
+input, select, textarea {
+    background: var(--input-bg);
+    color: var(--text-dark);
+    border: 1px solid var(--input-border);
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 1rem;
+    width: 100%;
+}
+button {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+button:hover, button:focus {
+    background: var(--focus);
+    color: #222;
+}
+footer {
+    background: var(--card-bg);
+    color: var(--text-dark);
+    text-align: center;
+    padding: 1rem 0;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+    border-top: 1px solid var(--input-border);
+}

@@ -1,0 +1,319 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Two-Factor Authentication - Beyond the Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mfa-container {
+        max-width: 500px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+    
+    .verification-input {
+        text-align: center;
+        font-size: 1.5em;
+        letter-spacing: 0.5em;
+        font-family: monospace;
+        max-width: 250px;
+        margin: 0 auto;
+        padding: 0.75rem;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+    }
+    
+    .verification-input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    .recovery-section {
+        margin-top: 2rem;
+        padding-top: 2rem;
+        border-top: 1px solid #dee2e6;
+    }
+    
+    .recovery-input {
+        font-family: monospace;
+        text-align: center;
+        font-size: 1.1em;
+        letter-spacing: 0.2em;
+    }
+    
+    .toggle-recovery {
+        color: #6c757d;
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+    
+    .toggle-recovery:hover {
+        color: #007bff;
+        text-decoration: underline;
+    }
+    
+    .auth-card {
+        background: #ffffff;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+    }
+    
+    .auth-header {
+        background: linear-gradient(135deg, #007bff, #0056b3);
+        color: white;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .auth-body {
+        padding: 2rem;
+    }
+    
+    .step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 1.5rem;
+    }
+    
+    .step {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 0.5rem;
+        font-weight: bold;
+        font-size: 0.9em;
+    }
+    
+    .step.completed {
+        background: #28a745;
+        color: white;
+    }
+    
+    .step.active {
+        background: #007bff;
+        color: white;
+    }
+    
+    .step.pending {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+    
+    .security-note {
+        background: #f8f9fa;
+        border-left: 4px solid #007bff;
+        padding: 1rem;
+        margin: 1.5rem 0;
+        border-radius: 0 6px 6px 0;
+    }
+    
+    .btn-2fa {
+        font-size: 1.1em;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+    }
+    
+    @media (max-width: 576px) {
+        .mfa-container {
+            padding: 1rem 0.5rem;
+        }
+        
+        .verification-input {
+            font-size: 1.3em;
+            letter-spacing: 0.3em;
+        }
+        
+        .auth-body {
+            padding: 1.5rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-container">
+    <div class="auth-card">
+        <div class="auth-header">
+            <h2 class="mb-2">Two-Factor Authentication</h2>
+            <p class="mb-0">Securing account for <strong>{{ username }}</strong></p>
+        </div>
+        
+        <div class="auth-body">
+            <div class="step-indicator">
+                <div class="step completed">1</div>
+                <div class="step active">2</div>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>{{ error }}
+            </div>
+            {% endif %}
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        <i class="bi bi-info-circle me-2"></i>{{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <!-- TOTP Token Section -->
+            <div id="totp-section">
+                <h4 class="text-center mb-3">Enter Authentication Code</h4>
+                <p class="text-center text-muted mb-4">
+                    Open your authenticator app and enter the 6-digit code:
+                </p>
+                
+                <form method="post" action="{% url 'users:login' %}" class="text-center">
+                    {% csrf_token %}
+                    <div class="form-group mb-4">
+                        <input type="text" name="otp_token" class="form-control verification-input" 
+                               placeholder="000000" maxlength="6" pattern="[0-9]{6}" 
+                               autocomplete="off" required autofocus id="totp-input">
+                        <div class="form-text text-muted mt-2">
+                            <small>Enter the 6-digit code from your authenticator app</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-2fa">
+                        <i class="bi bi-shield-check me-2"></i>Verify Code
+                    </button>
+                </form>
+            </div>
+            
+            <!-- Recovery Code Section -->
+            {% if has_recovery_codes %}
+            <div class="recovery-section">
+                <div class="text-center">
+                    <a href="#" class="toggle-recovery" onclick="toggleRecoverySection()">
+                        <i class="bi bi-key me-1"></i>
+                        Use a recovery code instead
+                    </a>
+                </div>
+                
+                <div id="recovery-section" style="display: none;">
+                    <h5 class="text-center mb-3 mt-3">Recovery Code</h5>
+                    <p class="text-center text-muted mb-3">
+                        Enter one of your recovery codes if you don't have access to your authenticator app:
+                    </p>
+                    
+                    <form method="post" action="{% url 'users:login' %}" class="text-center">
+                        {% csrf_token %}
+                        <div class="form-group mb-3">
+                            <input type="text" name="recovery_code" class="form-control recovery-input" 
+                                   placeholder="recovery-code-here" 
+                                   autocomplete="off" id="recovery-input">
+                            <div class="form-text text-muted mt-2">
+                                <small>Each recovery code can only be used once</small>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-primary btn-2fa">
+                            <i class="bi bi-unlock me-2"></i>Use Recovery Code
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="security-note">
+                <h6><i class="bi bi-info-circle me-2"></i>Security Information</h6>
+                <ul class="mb-0 small">
+                    <li>This code expires in 30 seconds</li>
+                    <li>Your login session is secured</li>
+                    <li>Never share your authentication codes</li>
+                </ul>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'users:login' %}" class="btn btn-link">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Login
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const totpInput = document.getElementById('totp-input');
+    const recoveryInput = document.getElementById('recovery-input');
+    
+    // Auto-format TOTP input
+    if (totpInput) {
+        totpInput.addEventListener('input', function() {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/\D/g, '');
+            // Limit to 6 digits
+            if (this.value.length > 6) {
+                this.value = this.value.slice(0, 6);
+            }
+        });
+        
+        // Auto-submit when 6 digits are entered
+        totpInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                // Small delay to let user see the complete code
+                setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            }
+        });
+    }
+    
+    // Format recovery code input
+    if (recoveryInput) {
+        recoveryInput.addEventListener('input', function() {
+            // Remove spaces and convert to lowercase
+            this.value = this.value.replace(/\s/g, '').toLowerCase();
+        });
+    }
+});
+
+function toggleRecoverySection() {
+    const totpSection = document.getElementById('totp-section');
+    const recoverySection = document.getElementById('recovery-section');
+    const toggleLink = document.querySelector('.toggle-recovery');
+    
+    if (recoverySection.style.display === 'none') {
+        // Show recovery section, hide TOTP
+        recoverySection.style.display = 'block';
+        totpSection.style.display = 'none';
+        toggleLink.innerHTML = '<i class="bi bi-phone me-1"></i>Use authenticator app instead';
+        
+        // Focus recovery input
+        document.getElementById('recovery-input').focus();
+    } else {
+        // Show TOTP section, hide recovery
+        recoverySection.style.display = 'none';
+        totpSection.style.display = 'block';
+        toggleLink.innerHTML = '<i class="bi bi-key me-1"></i>Use a recovery code instead';
+        
+        // Focus TOTP input
+        document.getElementById('totp-input').focus();
+    }
+}
+
+// Add visual feedback for code validation
+document.addEventListener('DOMContentLoaded', function() {
+    const totpInput = document.getElementById('totp-input');
+    
+    if (totpInput) {
+        totpInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                this.classList.add('is-valid');
+                this.classList.remove('is-invalid');
+            } else {
+                this.classList.remove('is-valid', 'is-invalid');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

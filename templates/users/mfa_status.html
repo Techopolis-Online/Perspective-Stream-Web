@@ -1,0 +1,253 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Two-Factor Authentication Status{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mfa-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .status-card {
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        background: #f9f9f9;
+    }
+    
+    .status-enabled {
+        border-color: #28a745;
+        background: #f8fff9;
+    }
+    
+    .status-disabled {
+        border-color: #dc3545;
+        background: #fff8f8;
+    }
+    
+    .status-required {
+        border-color: #ffc107;
+        background: #fffbf0;
+    }
+    
+    .status-icon {
+        font-size: 1.5em;
+        margin-right: 0.5rem;
+        vertical-align: middle;
+        display: none; /* Hide since we removed emojis */
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+    
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .info-item {
+        padding: 1rem;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #eee;
+    }
+    
+    .info-item label {
+        font-weight: bold;
+        color: #666;
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    
+    .alert-enforcement {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    @media (max-width: 768px) {
+        .info-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .btn-group {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-container">
+    <h1>Two-Factor Authentication Status</h1>
+    
+    {% if requires_mfa and not totp_device %}
+    <div class="alert-enforcement">
+        <h2>Two-Factor Authentication Required</h2>
+        <p>Your account role requires two-factor authentication for enhanced security. Please complete the setup to continue using the platform.</p>
+        <a href="{% url 'users:mfa_setup' %}" class="btn btn-warning">Setup 2FA Now</a>
+    </div>
+    {% endif %}
+    
+    {% if totp_device %}
+        <!-- MFA Enabled Status -->
+        <div class="status-card status-enabled">
+            <h2>Two-Factor Authentication Enabled</h2>
+            <p>Your account is protected with TOTP (Time-based One-Time Password) authentication using an authenticator app.</p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Authentication Method:</label>
+                    <span>Authenticator App (TOTP)</span>
+                </div>
+                <div class="info-item">
+                    <label>Device Name:</label>
+                    <span>{{ totp_device.name|default:"Default Device" }}</span>
+                </div>
+                <div class="info-item">
+                    <label>Recovery Codes:</label>
+                    <span>{{ recovery_codes_count }} unused codes available</span>
+                </div>
+                <div class="info-item">
+                    <label>Status:</label>
+                    <span class="text-success">Active & Verified</span>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <a href="{% url 'users:mfa_recovery_codes' %}" class="btn btn-primary">
+                    View Recovery Codes
+                </a>
+                <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#disableMfaModal">
+                    Disable 2FA
+                </button>
+            </div>
+        </div>
+    {% else %}
+        <!-- MFA Disabled Status -->
+        <div class="status-card {% if requires_mfa %}status-required{% else %}status-disabled{% endif %}">
+            <h2>Two-Factor Authentication Disabled</h2>
+            <p>Your account is not protected by two-factor authentication. 
+            {% if requires_mfa %}
+                <strong>Your account role requires 2FA for enhanced security.</strong>
+            {% else %}
+                We recommend enabling it for better security.
+            {% endif %}
+            </p>
+            
+            <div class="info-grid">
+                <div class="info-item">
+                    <label>Authentication Method:</label>
+                    <span class="text-muted">Password only</span>
+                </div>
+                <div class="info-item">
+                    <label>Security Level:</label>
+                    <span class="text-{% if requires_mfa %}warning{% else %}secondary{% endif %}">
+                        {% if requires_mfa %}Required{% else %}Basic{% endif %}
+                    </span>
+                </div>
+                {% if requires_mfa %}
+                <div class="info-item">
+                    <label>Enforcement Status:</label>
+                    <span class="text-warning">Setup Required</span>
+                </div>
+                {% endif %}
+                <div class="info-item">
+                    <label>Account Role:</label>
+                    <span>{{ user.role.get_name_display|default:"Standard User" }}</span>
+                </div>
+            </div>
+            
+            <div class="btn-group">
+                <a href="{% url 'users:mfa_setup' %}" class="btn btn-{% if requires_mfa %}warning{% else %}primary{% endif %} btn-lg">
+                    Setup Two-Factor Authentication
+                </a>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Additional Information -->
+    <div class="status-card">
+        <h2>About Two-Factor Authentication</h2>
+        <p>Two-factor authentication (2FA) adds an extra layer of security to your account by requiring both your password and a time-based code from your mobile device.</p>
+        
+        <h3>Benefits</h3>
+        <ul>
+            <li>Protects your account even if your password is compromised</li>
+            <li>Prevents unauthorized access from unknown devices</li>
+            <li>Required for administrative and moderation roles</li>
+            <li>Industry standard for sensitive accounts</li>
+        </ul>
+        
+        <h3>Supported Apps</h3>
+        <ul>
+            <li>Google Authenticator (Free)</li>
+            <li>Authy (Free, with backup)</li>
+            <li>Microsoft Authenticator (Free)</li>
+            <li>1Password (Premium)</li>
+        </ul>
+    </div>
+    
+    {% if mfa_enforced_at %}
+    <div class="status-card">
+        <h3>Enforcement History</h3>
+        <p><strong>MFA was enforced on:</strong> {{ mfa_enforced_at|date:"F j, Y \a\t g:i A" }}</p>
+    </div>
+    {% endif %}
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'users:settings' %}" class="btn btn-link">Back to Settings</a>
+    </div>
+</div>
+
+<!-- Disable MFA Confirmation Modal -->
+{% if totp_device %}
+<div class="modal fade" id="disableMfaModal" tabindex="-1" aria-labelledby="disableMfaModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="disableMfaModalLabel">Disable Two-Factor Authentication</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <strong>Warning:</strong> Disabling two-factor authentication will make your account less secure.
+                    {% if requires_mfa %}
+                    <br><strong>Note:</strong> Your account role may require re-enabling 2FA.
+                    {% endif %}
+                </div>
+                <p>Are you sure you want to disable two-factor authentication? This will:</p>
+                <ul>
+                    <li>Remove your authenticator app setup</li>
+                    <li>Delete all recovery codes</li>
+                    <li>Reduce your account security</li>
+                    {% if requires_mfa %}
+                    <li><strong>May restrict access based on your role</strong></li>
+                    {% endif %}
+                </ul>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <button type="submit" name="disable" class="btn btn-danger">Yes, Disable 2FA</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

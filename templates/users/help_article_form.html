@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+{% if object %}Edit{% else %}Create{% endif %} Help Article - Beyond the Gallery
+{% endblock %}
+
+{% block extra_head %}
+<!-- Include a rich text editor -->
+<link href="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/summernote@0.8.18/dist/summernote-bs4.min.js"></script>
+<style>
+    .note-editor .dropdown-toggle::after {
+        all: unset;
+    }
+    
+    .note-editor .note-dropdown-menu {
+        box-sizing: content-box;
+    }
+    
+    .note-editor .note-modal-footer {
+        box-sizing: content-box;
+    }
+    
+    .form-label {
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>{% if object %}Edit{% else %}Create{% endif %} Help Article</h1>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <a href="{% url 'users:help_article_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Articles
+            </a>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Article Information -->
+                        <fieldset class="mb-4">
+                            <legend>Article Information</legend>
+                            <div class="mb-3">
+                                <label for="id_title" class="form-label">Title</label>
+                                <input type="text" name="title" id="id_title" 
+                                       class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                       value="{{ form.title.value|default:'' }}" required>
+                                {% if form.title.errors %}
+                                    <div class="invalid-feedback">{{ form.title.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            {% if object %}
+                            <div class="mb-3">
+                                <label for="id_slug" class="form-label">Slug</label>
+                                <input type="text" name="slug" id="id_slug" 
+                                       class="form-control {% if form.slug.errors %}is-invalid{% endif %}"
+                                       value="{{ form.slug.value|default:'' }}">
+                                <div class="form-text">URL-friendly version of the title. Leave blank for auto-generation.</div>
+                                {% if form.slug.errors %}
+                                    <div class="invalid-feedback">{{ form.slug.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </fieldset>
+
+                        <!-- Content -->
+                        <fieldset class="mb-4">
+                            <legend>Content</legend>
+                            <div class="mb-3">
+                                <label for="id_content" class="form-label">Article Content</label>
+                                <textarea name="content" id="id_content" 
+                                          class="form-control {% if form.content.errors %}is-invalid{% endif %}"
+                                          rows="15" required>{{ form.content.value|default:'' }}</textarea>
+                                {% if form.content.errors %}
+                                    <div class="invalid-feedback">{{ form.content.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </fieldset>
+
+                        <!-- Organization -->
+                        <fieldset class="mb-4">
+                            <legend>Organization</legend>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_category" class="form-label">Category</label>
+                                    <select name="category" id="id_category" 
+                                            class="form-select {% if form.category.errors %}is-invalid{% endif %}">
+                                        {% for value, label in form.fields.category.choices %}
+                                            <option value="{{ value }}" 
+                                                    {% if form.category.value == value %}selected{% endif %}>
+                                                {{ label }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                    {% if form.category.errors %}
+                                        <div class="invalid-feedback">{{ form.category.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_order" class="form-label">Display Order</label>
+                                    <input type="number" name="order" id="id_order" 
+                                           class="form-control {% if form.order.errors %}is-invalid{% endif %}"
+                                           value="{{ form.order.value|default:'0' }}" min="0">
+                                    <div class="form-text">Lower numbers appear first (0 = default)</div>
+                                    {% if form.order.errors %}
+                                        <div class="invalid-feedback">{{ form.order.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </fieldset>
+
+                        <!-- Publication Settings -->
+                        <fieldset class="mb-4">
+                            <legend>Publication Settings</legend>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="checkbox" id="id_published" 
+                                               name="published" {% if form.published.value %}checked{% endif %}>
+                                        <label class="form-check-label" for="id_published">Published</label>
+                                        <div class="form-text">When checked, the article will be visible in the help center</div>
+                                    </div>
+                                    
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="id_featured" 
+                                               name="featured" {% if form.featured.value %}checked{% endif %}>
+                                        <label class="form-check-label" for="id_featured">Featured Article</label>
+                                        <div class="form-text">When checked, this article may appear in the featured section</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                        
+                        <!-- Submit Buttons -->
+                        <div class="mt-4 d-flex justify-content-between">
+                            <button type="submit" name="preview" class="btn btn-outline-primary">Preview</button>
+                            <div>
+                                {% if object %}
+                                <a href="{% url 'users:help_article_delete' object.slug %}" class="btn btn-outline-danger me-2">
+                                    Delete Article
+                                </a>
+                                {% endif %}
+                                <button type="submit" class="btn btn-primary">
+                                    {% if object %}Save Changes{% else %}Create Article{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Tips for Writing Help Articles</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="mb-0">
+                        <li class="mb-2">Use clear, concise language</li>
+                        <li class="mb-2">Break content into sections with headings</li>
+                        <li class="mb-2">Include step-by-step instructions</li>
+                        <li class="mb-2">Add screenshots or images when helpful</li>
+                        <li class="mb-2">Use formatting to highlight important information</li>
+                        <li>Proofread for errors before publishing</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="h5 mb-0">Available Formatting</h2>
+                </div>
+                <div class="card-body">
+                    <p class="mb-2">The editor supports:</p>
+                    <ul class="mb-0">
+                        <li class="mb-1">Headings (H2-H4)</li>
+                        <li class="mb-1">Bold, italic, underline</li>
+                        <li class="mb-1">Ordered and unordered lists</li>
+                        <li class="mb-1">Links and images</li>
+                        <li class="mb-1">Code blocks</li>
+                        <li class="mb-1">Tables</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize rich text editor
+    $('#id_content').summernote({
+        height: 400,
+        toolbar: [
+            ['style', ['style']],
+            ['font', ['bold', 'underline', 'clear']],
+            ['color', ['color']],
+            ['para', ['ul', 'ol', 'paragraph']],
+            ['table', ['table']],
+            ['insert', ['link', 'picture', 'video']],
+            ['view', ['fullscreen', 'codeview', 'help']]
+        ]
+    });
+    
+    // Auto-generate slug from title
+    const titleInput = document.getElementById('id_title');
+    const slugInput = document.getElementById('id_slug');
+    
+    if (titleInput && slugInput) {
+        titleInput.addEventListener('blur', function() {
+            // Only auto-generate if slug is empty or hasn't been manually edited
+            if (!slugInput.value || slugInput.dataset.auto !== 'false') {
+                const slugValue = titleInput.value
+                    .toLowerCase()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-')
+                    .replace(/-+/g, '-');
+                
+                slugInput.value = slugValue;
+            }
+        });
+        
+        // Mark when slug has been manually edited
+        if (slugInput) {
+            slugInput.addEventListener('input', function() {
+                this.dataset.auto = 'false';
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

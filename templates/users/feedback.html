@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Send Feedback - Beyond the Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Send Feedback</h1>
+            <p class="text-muted">We value your suggestions to help improve Beyond the Gallery.</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" id="feedbackForm">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="feedbackType" class="form-label">Feedback Type</label>
+                            <select class="form-select" id="feedbackType" name="feedback_type" required>
+                                <option value="" selected disabled>Select feedback type...</option>
+                                <option value="suggestion">Suggestion</option>
+                                <option value="bug">Bug Report</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="other">Other</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="feedbackSubject" class="form-label">Subject</label>
+                            <input type="text" class="form-control" id="feedbackSubject" name="subject" 
+                                   placeholder="Brief summary of your feedback" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="feedbackMessage" class="form-label">Message</label>
+                            <textarea class="form-control" id="feedbackMessage" name="message" 
+                                      rows="5" placeholder="Please provide details about your feedback..." required></textarea>
+                        </div>
+                        
+                        {% if not user.is_authenticated %}
+                            <div class="mb-3">
+                                <label for="feedbackEmail" class="form-label">Your Email (optional)</label>
+                                <input type="email" class="form-control" id="feedbackEmail" name="email" 
+                                       placeholder="So we can follow up with you if needed">
+                                <div class="form-text">We'll never share your email with anyone else.</div>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3 form-check">
+                            <input type="checkbox" class="form-check-input" id="feedbackConsent" name="consent" required>
+                            <label class="form-check-label" for="feedbackConsent">
+                                I consent to having my feedback stored and processed for improving Beyond the Gallery.
+                            </label>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">Submit Feedback</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Feedback Success Message (initially hidden) -->
+            <div class="alert alert-success mt-4" id="feedbackSuccess" style="display: none;" role="alert">
+                <h4 class="alert-heading">Thank you for your feedback!</h4>
+                <p>We appreciate you taking the time to share your thoughts with us. Your feedback has been submitted successfully.</p>
+                <hr>
+                <p class="mb-0">We'll review your message and may contact you if we need any additional information.</p>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">Other Ways to Reach Us</h3>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h4 class="h6">Email Support</h4>
+                        <p class="small">For urgent issues, email us directly:</p>
+                        <a href="mailto:support@beyondthegallery.app" class="d-flex align-items-center text-decoration-none">
+                            <i class="bi bi-envelope me-2"></i>
+                            support@beyondthegallery.app
+                        </a>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h4 class="h6">Community Forums</h4>
+                        <p class="small">Discuss with other users and our team:</p>
+                        <a href="#" class="d-flex align-items-center text-decoration-none">
+                            <i class="bi bi-chat-dots me-2"></i>
+                            Community Forums
+                        </a>
+                    </div>
+                    
+                    <div>
+                        <h4 class="h6">Social Media</h4>
+                        <p class="small">Follow us and send direct messages:</p>
+                        <div class="d-flex gap-2">
+                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-twitter"></i> Twitter
+                            </a>
+                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-discord"></i> Discord
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="h5 mb-0">Frequently Asked Questions</h3>
+                </div>
+                <div class="card-body">
+                    <p class="small">Before sending feedback, check if your question is already answered in our FAQ:</p>
+                    <a href="{% url 'users:help' %}" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-question-circle me-2"></i> Visit Help Center
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const feedbackForm = document.getElementById('feedbackForm');
+    const feedbackSuccess = document.getElementById('feedbackSuccess');
+    
+    // For demo purposes - in a real implementation, this would submit to a backend
+    feedbackForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Hide the form and show success message
+        feedbackForm.style.display = 'none';
+        feedbackSuccess.style.display = 'block';
+        
+        // Scroll to success message
+        feedbackSuccess.scrollIntoView({ behavior: 'smooth' });
+        
+        // In a real implementation, you would submit the form data via AJAX here
+    });
+});
+</script>
+{% endblock %}

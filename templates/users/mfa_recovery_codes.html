@@ -1,0 +1,346 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Two-Factor Authentication Recovery Codes{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mfa-container {
+        max-width: 700px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .recovery-codes-container {
+        background: #f8f9fa;
+        border: 2px solid #dee2e6;
+        border-radius: 8px;
+        padding: 2rem;
+        margin: 1.5rem 0;
+    }
+    
+    .codes-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.75rem;
+        margin: 1rem 0;
+    }
+    
+    .recovery-code-item {
+        background: white;
+        border: 1px solid #ddd;
+        padding: 0.75rem;
+        border-radius: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        transition: all 0.2s ease;
+    }
+    
+    .recovery-code-item:hover {
+        background: #f8f9fa;
+        border-color: #007bff;
+    }
+    
+    .recovery-code {
+        font-family: 'Courier New', monospace;
+        font-size: 1.1em;
+        font-weight: bold;
+        user-select: all;
+        flex-grow: 1;
+        margin-right: 0.5rem;
+    }
+    
+    .copy-btn {
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        font-size: 0.8em;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    }
+    
+    .copy-btn:hover {
+        background: #0056b3;
+    }
+    
+    .copy-btn.copied {
+        background: #28a745;
+    }
+    
+    .alert-warning {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-info {
+        background-color: #cce7ff;
+        border: 1px solid #87ceeb;
+        color: #0c5460;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        margin-top: 1.5rem;
+    }
+    
+    .instructions {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        border: 1px solid #e9ecef;
+    }
+    
+    .print-only {
+        display: none;
+    }
+    
+    @media print {
+        .no-print {
+            display: none !important;
+        }
+        
+        .print-only {
+            display: block !important;
+        }
+        
+        .recovery-codes-container {
+            background: white !important;
+            border: 2px solid black !important;
+        }
+        
+        .recovery-code {
+            background: white !important;
+            border: 1px solid black !important;
+        }
+        
+        body {
+            font-size: 12pt;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .codes-grid {
+            grid-template-columns: 1fr;
+        }
+        
+        .btn-group {
+            flex-direction: column;
+        }
+        
+        .recovery-code-item {
+            flex-direction: column;
+            text-align: center;
+            gap: 0.5rem;
+        }
+        
+        .recovery-code {
+            margin-right: 0;
+            margin-bottom: 0.25rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-container">
+    <h1>Two-Factor Authentication Recovery Codes</h1>
+    
+    <div class="alert-warning no-print">
+        <h2>Important Security Information</h2>
+        <p><strong>Save these recovery codes in a secure location!</strong> Each code can only be used once to regain access to your account if you lose access to your authenticator app.</p>
+    </div>
+    
+    <div class="print-only">
+        <h2>Beyond the Gallery - 2FA Recovery Codes</h2>
+        <p><strong>Account:</strong> {{ user.email }}</p>
+        <p><strong>Generated:</strong> {{ codes.0.created_at|date:"F j, Y \a\t g:i A" }}</p>
+    </div>
+    
+    <div class="recovery-codes-container">
+        <h2>Your Recovery Codes</h2>
+        <p class="text-muted">Each code can only be used once. Click the copy button next to any code to copy it.</p>
+        
+        <div class="codes-grid">
+            {% for code in codes %}
+            <div class="recovery-code-item">
+                <span class="recovery-code" data-code="{{ code }}">{{ code }}</span>
+                <button class="copy-btn" onclick="copyIndividualCode(this, '{{ code }}')">Copy</button>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center text-muted">
+            <small>{{ codes|length }} recovery codes available</small>
+        </div>
+    </div>
+    
+    <div class="instructions">
+        <h3>How to Use Recovery Codes</h3>
+        <ol>
+            <li><strong>Store Safely:</strong> Keep these codes in a secure password manager, safe, or other secure location</li>
+            <li><strong>One-Time Use:</strong> Each code can only be used once to log in</li>
+            <li><strong>Login Process:</strong> If you lose your authenticator app, use a recovery code instead of your 2FA token</li>
+            <li><strong>Regenerate:</strong> You can generate new codes at any time (this will invalidate the current ones)</li>
+        </ol>
+        
+        <div class="alert-info">
+            <strong>Pro Tip:</strong> Print this page or save it as a PDF for offline access. Store it securely along with other important account information.
+        </div>
+    </div>
+    
+    <div class="btn-group no-print">
+        <button onclick="window.print()" class="btn btn-primary">
+            Print Codes
+        </button>
+        <button onclick="saveToFile()" class="btn btn-success" id="saveFileBtn">
+            Save to File
+        </button>
+        <button onclick="copyAllCodes()" class="btn btn-secondary" id="copyAllBtn">
+            Copy All Codes
+        </button>
+        <form method="post" style="display: inline;">
+            {% csrf_token %}
+            <button type="submit" name="regenerate" class="btn btn-warning" 
+                    onclick="return confirm('This will invalidate all current recovery codes. Are you sure?')">
+                Generate New Codes
+            </button>
+        </form>
+    </div>
+    
+    <div class="text-center mt-4 no-print">
+        <a href="{% url 'users:mfa_status' %}" class="btn btn-link">Back to 2FA Status</a>
+    </div>
+</div>
+
+<script>
+function copyIndividualCode(button, code) {
+    navigator.clipboard.writeText(code).then(function() {
+        const originalText = button.innerHTML;
+        button.classList.add('copied');
+        button.innerHTML = 'Copied!';
+        setTimeout(function() {
+            button.classList.remove('copied');
+            button.innerHTML = originalText;
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy code: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = code;
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            const originalText = button.innerHTML;
+            button.classList.add('copied');
+            button.innerHTML = 'Copied!';
+            setTimeout(function() {
+                button.classList.remove('copied');
+                button.innerHTML = originalText;
+            }, 2000);
+        } catch (err) {
+            console.error('Fallback copy failed: ', err);
+        }
+        document.body.removeChild(textArea);
+    });
+}
+
+function saveToFile() {
+    const codes = [];
+    document.querySelectorAll('.recovery-code').forEach(function(element) {
+        codes.push(element.getAttribute('data-code'));
+    });
+    
+    const content = `Beyond the Gallery - 2FA Recovery Codes
+Account: {{ user.email }}
+Generated: {{ codes.0.created_at|date:"F j, Y \a\t g:i A" }}
+
+IMPORTANT SECURITY INFORMATION:
+- Save these recovery codes in a secure location
+- Each code can only be used once to regain access to your account
+- Store them safely along with other important account information
+- If you lose access to your authenticator app, use these codes to log in
+
+Recovery Codes:
+${codes.map((code, index) => `${index + 1}. ${code}`).join('\n')}
+
+Instructions:
+1. Store Safely: Keep these codes in a secure password manager, safe, or other secure location
+2. One-Time Use: Each code can only be used once to log in
+3. Login Process: If you lose your authenticator app, use a recovery code instead of your 2FA token
+4. Regenerate: You can generate new codes at any time (this will invalidate the current ones)
+
+Generated by Beyond the Gallery Security System
+Date: ${new Date().toLocaleString()}`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `beyond-gallery-2fa-recovery-codes-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+    
+    // Update button feedback
+    const btn = document.getElementById('saveFileBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = 'File Saved!';
+    btn.classList.add('btn-success');
+    setTimeout(function() {
+        btn.innerHTML = originalText;
+    }, 3000);
+}
+
+function copyAllCodes() {
+    const codes = [];
+    document.querySelectorAll('.recovery-code').forEach(function(element) {
+        codes.push(element.getAttribute('data-code'));
+    });
+    
+    const allCodes = codes.join('\n');
+    const fullText = `Beyond the Gallery 2FA Recovery Codes\nAccount: {{ user.email }}\nGenerated: {{ codes.0.created_at|date:"F j, Y \a\t g:i A" }}\n\nCodes:\n${allCodes}\n\nNote: Each code can only be used once. Store securely.`;
+    
+    navigator.clipboard.writeText(fullText).then(function() {
+        const btn = document.getElementById('copyAllBtn');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'All Codes Copied!';
+        btn.classList.add('btn-success');
+        btn.classList.remove('btn-secondary');
+        setTimeout(function() {
+            btn.innerHTML = originalText;
+            btn.classList.remove('btn-success');
+            btn.classList.add('btn-secondary');
+        }, 3000);
+    }).catch(function(err) {
+        console.error('Could not copy all codes: ', err);
+        alert('Could not copy codes. Please copy them manually.');
+    });
+}
+
+// Auto-focus first code for screen readers
+document.addEventListener('DOMContentLoaded', function() {
+    const firstCode = document.querySelector('.recovery-code');
+    if (firstCode) {
+        firstCode.setAttribute('tabindex', '0');
+    }
+});
+</script>
+{% endblock %}

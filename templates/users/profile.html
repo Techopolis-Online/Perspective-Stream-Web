@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ profile_user.get_full_name|default:profile_user.username }}'s Profile - Beyond the Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Profile Header -->
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            {% if profile_user.profile.avatar %}
+                                <img src="{{ profile_user.profile.avatar.url }}" alt="{{ profile_user.username }}'s avatar" 
+                                     class="rounded-circle" style="width: 100px; height: 100px; object-fit: cover;">
+                            {% else %}
+                                <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 100px; height: 100px;">
+                                    <i class="bi bi-person-fill text-white display-4"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h1 class="h2 mb-1">{{ profile_user.get_full_name|default:profile_user.username }}</h1>
+                            <p class="text-muted mb-2">@{{ profile_user.username }}</p>
+                            {% if profile_user.profile.bio %}
+                                <p class="mb-2">{{ profile_user.profile.bio }}</p>
+                            {% endif %}
+                            <div class="d-flex flex-wrap gap-3 text-muted">
+                                {% if profile_user.profile.location %}
+                                    <span><i class="bi bi-geo-alt me-1"></i>{{ profile_user.profile.location }}</span>
+                                {% endif %}
+                                {% if profile_user.profile.website %}
+                                    <span><i class="bi bi-link-45deg me-1"></i><a href="{{ profile_user.profile.website }}" target="_blank" class="text-decoration-none">Website</a></span>
+                                {% endif %}
+                                <span><i class="bi bi-calendar me-1"></i>Joined {{ profile_user.date_joined|date:"F Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <div class="d-flex gap-2">
+                                <a href="{% url 'users:profile_edit' %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-pencil me-1"></i>Edit Profile
+                                </a>
+                                <a href="{% url 'users:settings' %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-gear me-1"></i>Settings
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="bi bi-lightning-charge display-4"></i>
+                    </div>
+                    <h3 class="stats-value">{{ profile_user.shortcuts.count }}</h3>
+                    <p class="stats-title mb-0">Shortcuts Shared</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="bi bi-heart-fill display-4"></i>
+                    </div>
+                    <h3 class="stats-value">{{ profile_user.favorites.count }}</h3>
+                    <p class="stats-title mb-0">Favorites</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="bi bi-star-fill display-4"></i>
+                    </div>
+                    <h3 class="stats-value">{{ profile_user.reviews.count }}</h3>
+                    <p class="stats-title mb-0">Reviews</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="card stats-card text-center">
+                <div class="card-body">
+                    <div class="stats-icon">
+                        <i class="bi bi-people-fill display-4"></i>
+                    </div>
+                    <h3 class="stats-value">{{ profile_user.followers.count }}</h3>
+                    <p class="stats-title mb-0">Followers</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content Tabs -->
+    <div class="row">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="profileTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="shortcuts-tab" data-bs-toggle="tab" data-bs-target="#shortcuts" 
+                            type="button" role="tab" aria-controls="shortcuts" aria-selected="true">
+                        <i class="bi bi-lightning-charge me-1"></i>My Shortcuts
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" 
+                            type="button" role="tab" aria-controls="favorites" aria-selected="false">
+                        <i class="bi bi-heart me-1"></i>Favorites
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews" 
+                            type="button" role="tab" aria-controls="reviews" aria-selected="false">
+                        <i class="bi bi-star me-1"></i>Reviews
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="activity-tab" data-bs-toggle="tab" data-bs-target="#activity" 
+                            type="button" role="tab" aria-controls="activity" aria-selected="false">
+                        <i class="bi bi-clock me-1"></i>Activity
+                    </button>
+                </li>
+            </ul>
+            
+            <div class="tab-content" id="profileTabsContent">
+                <!-- My Shortcuts Tab -->
+                <div class="tab-pane fade show active" id="shortcuts" role="tabpanel" aria-labelledby="shortcuts-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if profile_user.shortcuts.exists %}
+                                <div class="row">
+                                    {% for shortcut in profile_user.shortcuts.all|slice:":6" %}
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card shortcut-card h-100">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ shortcut.name }}</h6>
+                                                    <p class="card-text text-muted small">{{ shortcut.description|truncatewords:15 }}</p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">{{ shortcut.download_count }} downloads</small>
+                                                        <a href="{% url 'shortcuts:detail' shortcut.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if profile_user.shortcuts.count > 6 %}
+                                    <div class="text-center mt-3">
+                                        <a href="{% url 'shortcuts:my_shortcuts' %}" class="btn btn-primary">View All My Shortcuts</a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-lightning-charge display-1 text-muted"></i>
+                                    <h4 class="mt-3 text-muted">No shortcuts yet</h4>
+                                    <p class="text-muted">Start sharing your awesome shortcuts with the community!</p>
+                                    <a href="{% url 'shortcuts:submit' %}" class="btn btn-primary">Submit Your First Shortcut</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites Tab -->
+                <div class="tab-pane fade" id="favorites" role="tabpanel" aria-labelledby="favorites-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if profile_user.favorites.exists %}
+                                <div class="row">
+                                    {% for favorite in profile_user.favorites.all|slice:":6" %}
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card shortcut-card h-100">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">{{ favorite.shortcut.name }}</h6>
+                                                    <p class="card-text text-muted small">{{ favorite.shortcut.description|truncatewords:15 }}</p>
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <small class="text-muted">by @{{ favorite.shortcut.user.username }}</small>
+                                                        <a href="{% url 'shortcuts:detail' favorite.shortcut.id %}" class="btn btn-sm btn-outline-primary">View</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                                {% if profile_user.favorites.count > 6 %}
+                                    <div class="text-center mt-3">
+                                        <a href="{% url 'users:favorites' %}" class="btn btn-primary">View All Favorites</a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-heart display-1 text-muted"></i>
+                                    <h4 class="mt-3 text-muted">No favorites yet</h4>
+                                    <p class="text-muted">Start exploring and favoriting shortcuts you love!</p>
+                                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reviews Tab -->
+                <div class="tab-pane fade" id="reviews" role="tabpanel" aria-labelledby="reviews-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            {% if profile_user.reviews.exists %}
+                                {% for review in profile_user.reviews.all|slice:":5" %}
+                                    <div class="border-bottom pb-3 mb-3">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">
+                                                    <a href="{% url 'shortcuts:detail' review.shortcut.id %}" class="text-decoration-none">
+                                                        {{ review.shortcut.name }}
+                                                    </a>
+                                                </h6>
+                                                <div class="rating-stars mb-2">
+                                                    {% for i in "12345" %}
+                                                        {% if forloop.counter <= review.rating %}
+                                                            <i class="bi bi-star-fill"></i>
+                                                        {% else %}
+                                                            <i class="bi bi-star"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                <p class="mb-0">{{ review.comment|truncatewords:30 }}</p>
+                                            </div>
+                                            <small class="text-muted">{{ review.created_at|date:"M d, Y" }}</small>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                                {% if profile_user.reviews.count > 5 %}
+                                    <div class="text-center">
+                                        <a href="#" class="btn btn-outline-primary">View All Reviews</a>
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-center py-5">
+                                    <i class="bi bi-star display-1 text-muted"></i>
+                                    <h4 class="mt-3 text-muted">No reviews yet</h4>
+                                    <p class="text-muted">Share your thoughts on shortcuts you've tried!</p>
+                                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Activity Tab -->
+                <div class="tab-pane fade" id="activity" role="tabpanel" aria-labelledby="activity-tab">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="text-center py-5">
+                                <i class="bi bi-clock display-1 text-muted"></i>
+                                <h4 class="mt-3 text-muted">Activity coming soon</h4>
+                                <p class="text-muted">Recent activity and timeline will be displayed here.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Social Links -->
+    {% if profile_user.profile.twitter_handle or profile_user.profile.github_username %}
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Connect</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex gap-3">
+                            {% if profile_user.profile.twitter_handle %}
+                                <a href="https://twitter.com/{{ profile_user.profile.twitter_handle }}" target="_blank" 
+                                   class="btn btn-outline-primary">
+                                    <i class="fab fa-twitter me-1"></i>@{{ profile_user.profile.twitter_handle }}
+                                </a>
+                            {% endif %}
+                            {% if profile_user.profile.github_username %}
+                                <a href="https://github.com/{{ profile_user.profile.github_username }}" target="_blank" 
+                                   class="btn btn-outline-secondary">
+                                    <i class="fab fa-github me-1"></i>{{ profile_user.profile.github_username }}
+                                </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<style>
+.shortcut-card {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shortcut-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.rating-stars {
+    color: #ffc107;
+}
+</style>
+{% endblock %} 

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Home | Perspective Stream{% endblock %}
+{% block content %}
+<h1>Welcome to Perspective Stream</h1>
+<p>Perspective Stream is a live broadcasting platform for creators, radio hosts, and accessibility-conscious streamers. Simulcast to internet radio and YouTube, manage broadcasts, overlays, alerts, and event sound triggers—all from one accessible dashboard.</p>
+<ul>
+	<li>Dual-destination streaming: Go live on radio and YouTube at the same time.</li>
+	<li>Full broadcast control: Privacy, metadata, overlays, and stream state from one dashboard.</li>
+	<li>Priority alerts: Super Chats and memberships trigger instant sound + TTS.</li>
+	<li>Event sound triggers: Play "Breaking News" or custom cues instantly.</li>
+	<li>Accessibility-first: WCAG-compliant interface with keyboard and screen reader support.</li>
+</ul>
+<p>Please <a href="{% url 'users:login' %}">login</a> to access your dashboard and features.</p>
+{% endblock %}

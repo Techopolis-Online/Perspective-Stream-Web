@@ -1,0 +1,357 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Favorites - Beyond the Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">My Favorite Shortcuts</h1>
+            <p class="text-muted">Here are all the shortcuts you've marked as your favorites.</p>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        {% for favorite in favorites %}
+            <div class="col-12 col-sm-6 col-md-4 col-lg-3 col-xl-2 mb-4 d-flex justify-content-center">
+                <article class="card shortcut-blog-card h-100" style="max-width: 220px; width: 100%;" aria-labelledby="shortcut-{{ favorite.shortcut.id }}-title">
+                    <div class="shortcut-featured-image">
+                        {% if favorite.shortcut.metadata.icon %}
+                            <img src="{{ favorite.shortcut.metadata.icon.url }}" 
+                                 alt="Icon for {{ favorite.shortcut.name }} shortcut" 
+                                 class="shortcut-icon-large">
+                        {% else %}
+                            <div class="shortcut-icon-placeholder" role="img" aria-label="Default shortcut icon">
+                                <i class="bi bi-lightning-charge"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-body shortcut-content">
+                        <h2 class="card-title shortcut-title h5">
+                            <a href="{% url 'shortcuts:detail' favorite.shortcut.id %}" class="shortcut-link" id="shortcut-{{ favorite.shortcut.id }}-title">{{ favorite.shortcut.name }}</a>
+                        </h2>
+                        <p class="card-text shortcut-excerpt">{{ favorite.shortcut.description|truncatewords:6 }}</p>
+                        <div class="shortcut-meta">
+                            <span class="author">by @{{ favorite.shortcut.user.username }}</span>
+                            <span class="category">{{ favorite.shortcut.category.name|default:"Uncategorized" }}</span>
+                        </div>
+                        <div class="mt-2 text-center">
+                            <button class="btn btn-sm btn-outline-danger remove-favorite" 
+                                    data-shortcut-id="{{ favorite.shortcut.id }}">
+                                <i class="bi bi-heart-fill me-1"></i>Remove from Favorites
+                            </button>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <i class="bi bi-heart-fill display-1 text-muted" aria-hidden="true"></i>
+                    <h3 class="mt-3 text-muted">You haven't favorited any shortcuts yet.</h3>
+                    <p class="text-muted">Browse our collection and add some shortcuts to your favorites!</p>
+                    <a href="{% url 'shortcuts:browse' %}" class="btn btn-primary">Browse Shortcuts</a>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+.shortcut-blog-card {
+    background: var(--pt-primary-light, #ffffff);
+    border-radius: 6px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+    border: 1px solid #e0e0e0;
+}
+
+.shortcut-blog-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.shortcut-link {
+    text-decoration: none;
+    color: inherit;
+}
+
+.shortcut-link:hover {
+    text-decoration: none;
+    color: var(--pt-primary-dark, #4285F4);
+}
+
+.shortcut-featured-image {
+    width: 100%;
+    height: 110px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.shortcut-icon-large {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    border-radius: 10px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.shortcut-icon-placeholder {
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.shortcut-icon-placeholder i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.shortcut-content {
+    padding: 0.625rem;
+}
+
+.shortcut-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: var(--pt-primary-dark, #333333);
+    line-height: 1.2;
+    word-wrap: break-word;
+    hyphens: auto;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shortcut-excerpt {
+    color: #666666;
+    font-size: 0.75rem;
+    line-height: 1.3;
+    margin-bottom: 0.5rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.shortcut-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: #999999;
+}
+
+.shortcut-meta .author {
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.shortcut-meta .category {
+    background: var(--pt-primary-light, #f0f0f0);
+    color: var(--pt-primary-dark, #333333);
+    padding: 0.15rem 0.3rem;
+    border-radius: 4px;
+    font-size: 0.65rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-align: center;
+}
+
+/* Dark mode styles for blog grid */
+.dark-mode .shortcut-blog-card {
+    background: #172442;
+    border-color: var(--border-color, #2c3a57);
+}
+
+.dark-mode .shortcut-title {
+    color: #ffffff;
+}
+
+.dark-mode .shortcut-excerpt {
+    color: #a9b4cc;
+}
+
+.dark-mode .shortcut-meta {
+    color: #6b7280;
+}
+
+.dark-mode .shortcut-meta .author {
+    color: #a9b4cc;
+}
+
+.dark-mode .shortcut-meta .category {
+    background: var(--pt-primary-dark, #1a2c50);
+    color: var(--pt-primary-light, #4285F4);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .shortcut-featured-image {
+        height: 80px;
+    }
+    
+    .shortcut-icon-large {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .shortcut-icon-placeholder {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .shortcut-icon-placeholder i {
+        font-size: 1.2rem;
+    }
+    
+    .shortcut-title {
+        font-size: 0.9rem;
+    }
+    
+    .shortcut-excerpt {
+        font-size: 0.8rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .shortcut-meta {
+        font-size: 0.7rem;
+    }
+    
+    .shortcut-meta .category {
+        font-size: 0.65rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Get all remove favorite buttons
+        const removeButtons = document.querySelectorAll('.remove-favorite');
+        
+        // Add click event listener to each button
+        removeButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const shortcutId = this.dataset.shortcutId;
+                const card = this.closest('.col-12, .col-sm-6, .col-md-4, .col-lg-3, .col-xl-2');
+                
+                // Send AJAX request to toggle_favorite endpoint
+                fetch(`/shortcuts/${shortcutId}/favorite/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRFToken': getCookie('csrftoken')
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Remove the card from the UI
+                    if (!data.favorited) {
+                        card.remove();
+                        
+                        // Check if there are any favorites left
+                        const remainingCards = document.querySelectorAll('.shortcut-blog-card');
+                        if (remainingCards.length === 0) {
+                            // Show empty state if no favorites left
+                            const row = document.querySelector('.row.justify-content-center');
+                            row.innerHTML = `
+                                <div class="col-12">
+                                    <div class="text-center py-5">
+                                        <i class="bi bi-heart-fill display-1 text-muted" aria-hidden="true"></i>
+                                        <h3 class="mt-3 text-muted">You haven't favorited any shortcuts yet.</h3>
+                                        <p class="text-muted">Browse our collection and add some shortcuts to your favorites!</p>
+                                        <a href="/shortcuts/browse/" class="btn btn-primary">Browse Shortcuts</a>
+                                    </div>
+                                </div>
+                            `;
+                        }
+                        
+                        // Show feedback message
+                        showToast('Removed from favorites!', 'success');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showToast('Failed to remove from favorites', 'danger');
+                });
+            });
+        });
+        
+        // Helper function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Helper function to show toast message
+        function showToast(message, type) {
+            // Check if toast container exists
+            let toastContainer = document.getElementById('toast-container');
+            if (!toastContainer) {
+                // Create toast container if it doesn't exist
+                toastContainer = document.createElement('div');
+                toastContainer.id = 'toast-container';
+                toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+                toastContainer.style.zIndex = '9999';
+                document.body.appendChild(toastContainer);
+            }
+            
+            // Create a unique ID for the toast
+            const toastId = `toast-${Date.now()}`;
+            
+            // Create toast HTML
+            const toastHTML = `
+                <div id="${toastId}" class="toast align-items-center text-white bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            `;
+            
+            // Add toast to container
+            toastContainer.innerHTML += toastHTML;
+            
+            // Initialize the toast
+            const toastEl = document.getElementById(toastId);
+            const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+            toast.show();
+            
+            // Remove toast from DOM after it's hidden
+            toastEl.addEventListener('hidden.bs.toast', function () {
+                this.remove();
+            });
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,408 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Two-Factor Authentication Backup Codes - Beyond the Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .backup-codes-card {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .codes-list {
+        margin: 20px 0;
+        padding: 20px 20px 20px 40px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 2px solid #007AFF;
+    }
+    .codes-list .code-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 10px 0;
+    }
+    
+    .backup-code {
+        background: white;
+        padding: 15px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        text-align: center;
+        font-size: 16px;
+        letter-spacing: 1px;
+        border: 1px solid #dee2e6;
+        user-select: all;
+        cursor: pointer;
+    }
+    
+    .backup-code:hover {
+        background: #e9ecef;
+        border-color: #007AFF;
+    }
+    
+    .warning-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .success-section {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .instructions {
+        background: #e7f1ff;
+        border: 1px solid #b8d4ff;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .print-button, .download-button {
+        margin: 10px 5px;
+    }
+    
+    .accessibility-note {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 15px 0;
+        font-size: 0.9rem;
+    }
+    
+    @media print {
+        body * {
+            visibility: hidden;
+        }
+        
+        .backup-codes-card,
+        .backup-codes-card * {
+            visibility: visible;
+        }
+        
+        .no-print {
+            display: none !important;
+        }
+        
+        .backup-codes-card {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .backup-code {
+            font-size: 14px;
+            padding: 10px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="backup-codes-card">
+        <div class="text-center mb-4">
+            {% if is_new_setup %}
+                <h1>Two-Factor Authentication Enabled!</h1>
+                <p class="text-muted">Your backup codes are ready</p>
+            {% else %}
+                <h1>Your Backup Codes</h1>
+                <p class="text-muted">Recovery codes for your account</p>
+            {% endif %}
+        </div>
+
+        {% if is_new_setup %}
+            <div class="success-section">
+                <h2>Setup Complete</h2>
+                <p>Two-factor authentication has been successfully enabled on your account. Below are your backup codes - save them now!</p>
+            </div>
+        {% endif %}
+
+        {% if backup_codes %}
+            <div class="warning-section">
+                <h2>Important: Save These Codes Now</h2>
+                <ul class="mb-0">
+                    <li><strong>These codes will not be shown again</strong></li>
+                    <li>Each code can only be used once</li>
+                    <li>Store them in a secure location (password manager, safe, etc.)</li>
+                    <li>Use them if you lose access to your primary 2FA method</li>
+                </ul>
+            </div>
+
+            <div class="text-center mb-3">
+                <h2>Your Backup Codes</h2>
+            </div>
+
+            <ol class="codes-list" aria-label="Backup codes list">
+                {% for code in backup_codes %}
+                    <li class="code-item">
+                        <code class="backup-code" tabindex="0" aria-label="Backup code {{ forloop.counter }}: {{ code }}" data-code="{{ code }}">{{ code }}</code>
+                        <button type="button" class="btn btn-sm btn-outline-secondary copy-one" aria-label="Copy backup code {{ forloop.counter }}" data-code="{{ code }}">Copy</button>
+                    </li>
+                {% endfor %}
+            </ol>
+
+            <div class="text-center no-print">
+                <button type="button" class="btn btn-outline-primary print-button" onclick="window.print()">
+                    Print Codes
+                </button>
+                <button type="button" class="btn btn-outline-secondary download-button" onclick="downloadCodes()">
+                    Download as Text
+                </button>
+                <button type="button" class="btn btn-outline-info" onclick="copyAllCodes()">
+                    Copy All
+                </button>
+            </div>
+
+            <form method="post" class="no-print">
+                {% csrf_token %}
+                
+                <div class="instructions">
+                    <h2>What to do next</h2>
+                    <ol>
+                        <li>Copy, print, or download these codes using the buttons above</li>
+                        <li>Store them in a secure location like a password manager</li>
+                        <li>Check the box below to confirm you've saved them</li>
+                        <li>Complete the setup process</li>
+                    </ol>
+                </div>
+
+                <div class="mb-3">
+                    <div class="form-check">
+                        {% render_field form.confirm class="form-check-input" %}
+                        <label class="form-check-label" for="{{ form.confirm.id_for_label }}">
+                            {{ form.confirm.label }}
+                        </label>
+                    </div>
+                    
+                    {% if form.confirm.help_text %}
+                        <div class="form-text">{{ form.confirm.help_text }}</div>
+                    {% endif %}
+                    
+                    {% if form.confirm.errors %}
+                        <div class="alert alert-danger mt-2" role="alert">
+                            {% for error in form.confirm.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg" id="complete-setup-btn" disabled>
+                        Complete Setup
+                    </button>
+                </div>
+            </form>
+            
+        {% else %}
+            <div class="instructions">
+                <h2>Backup Codes Status</h2>
+                <p>You currently have <strong>{{ existing_codes_count }}</strong> unused backup codes.</p>
+                
+                {% if existing_codes_count <= 3 %}
+                    <div class="alert alert-warning" role="alert">
+                        <strong>Low backup codes!</strong> You should generate new backup codes soon.
+                    </div>
+                {% endif %}
+                
+                <div class="d-grid gap-2 mt-3">
+                    <a href="{% url 'users:settings' %}" class="btn btn-primary">
+                        Manage 2FA Settings
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="accessibility-note no-print">
+            <h2>Accessibility Information</h2>
+            <ul class="mb-0">
+                <li>Each backup code can be selected and copied individually</li>
+                <li>Use Tab key to navigate between codes</li>
+                <li>Screen readers will announce each code when focused</li>
+                <li>All codes can be copied at once using the "Copy All" button</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Enable the complete setup button when checkbox is checked
+document.addEventListener('DOMContentLoaded', function() {
+    // Create a persistent screen reader live region
+    if (!document.getElementById('sr-live-region')) {
+        const srLive = document.createElement('div');
+        srLive.id = 'sr-live-region';
+        srLive.setAttribute('role', 'status');
+        srLive.setAttribute('aria-live', 'assertive');
+        srLive.setAttribute('aria-atomic', 'true');
+        srLive.className = 'visually-hidden';
+        srLive.innerHTML = '<span id="sr-slot-1"></span><span id="sr-slot-2"></span>';
+        document.body.appendChild(srLive);
+    }
+    const checkbox = document.getElementById('id_confirm');
+    const submitBtn = document.getElementById('complete-setup-btn');
+    
+    if (checkbox && submitBtn) {
+        checkbox.addEventListener('change', function() {
+            submitBtn.disabled = !this.checked;
+        });
+    }
+    
+    // Add click-to-copy functionality for individual codes and buttons
+    document.querySelectorAll('.backup-code').forEach(code => {
+        code.addEventListener('click', function(e) {
+            e.preventDefault();
+            const codeText = this.dataset.code;
+            copyToClipboard(codeText, { announce: 'Code copied' });
+            showInlineCopyFeedback(this);
+        });
+        
+        // Keyboard support
+        code.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.click();
+            }
+        });
+    });
+
+    document.querySelectorAll('.copy-one').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            const codeText = this.dataset.code;
+            copyToClipboard(codeText, { announce: 'Code copied' });
+            showInlineCopyFeedback(this.previousElementSibling);
+        });
+    });
+});
+
+let __srToggle = false;
+
+function announceToScreenReader(message) {
+    const sr = document.getElementById('sr-live-region');
+    if (!sr) return;
+    const slot1 = sr.querySelector('#sr-slot-1');
+    const slot2 = sr.querySelector('#sr-slot-2');
+    if (!slot1 || !slot2) return;
+    __srToggle = !__srToggle;
+    const active = __srToggle ? slot1 : slot2;
+    const inactive = __srToggle ? slot2 : slot1;
+    inactive.textContent = '';
+    // Delay to ensure change is detected by screen readers
+    setTimeout(() => { active.textContent = message; }, 0);
+}
+
+function copyToClipboard(text, options = {}) {
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(text).then(function() {
+            const msg = options.announce || 'Code copied';
+            showCopyFeedback(msg);
+        }).catch(function(err) {
+            console.error('Could not copy text: ', err);
+            fallbackCopy(text, options);
+        });
+    } else {
+        fallbackCopy(text, options);
+    }
+}
+
+function showInlineCopyFeedback(targetEl) {
+    const originalBg = targetEl.style.background;
+    targetEl.style.background = '#d4edda';
+    setTimeout(() => {
+        targetEl.style.background = originalBg || '';
+    }, 800);
+}
+
+function fallbackCopy(text, options = {}) {
+    const textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.select();
+    try {
+        document.execCommand('copy');
+        const msg = options.announce || 'Code copied';
+        showCopyFeedback(msg);
+    } catch(err) {
+        console.error('Fallback copy failed: ', err);
+        showCopyFeedback('Copy failed');
+    }
+    document.body.removeChild(textArea);
+}
+
+function showCopyFeedback(message) {
+    // Create temporary feedback element
+    const feedback = document.createElement('div');
+    feedback.textContent = message;
+    feedback.setAttribute('role', 'status');
+    feedback.setAttribute('aria-live', 'polite');
+    feedback.setAttribute('aria-atomic', 'true');
+    feedback.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #007AFF;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 6px;
+        z-index: 1000;
+        font-weight: bold;
+    `;
+    
+    // Update the persistent live region for reliable SR announcement
+    announceToScreenReader(message);
+
+    document.body.appendChild(feedback);
+    
+    setTimeout(() => {
+        document.body.removeChild(feedback);
+    }, 2000);
+}
+
+function copyAllCodes() {
+    const codes = Array.from(document.querySelectorAll('.backup-code')).map(el => el.dataset.code);
+    const allCodes = codes.join('\n');
+    
+    copyToClipboard(allCodes, { announce: 'All codes copied' });
+}
+
+function downloadCodes() {
+    const codes = Array.from(document.querySelectorAll('.backup-code')).map(el => el.dataset.code);
+    const content = `Beyond the Gallery - Two-Factor Authentication Backup Codes
+Generated: ${new Date().toLocaleString()}
+User: {{ user.username }}
+
+IMPORTANT: Each code can only be used once. Store these codes in a secure location.
+
+${codes.map((code, index) => `${index + 1}. ${code}`).join('\n')}
+
+--- End of Backup Codes ---`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'beyondthegallery-backup-codes.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+}
+</script>
+{% endblock %}
+

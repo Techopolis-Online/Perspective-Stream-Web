@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Add Station | Perspective Stream{% endblock %}
+{% block content %}
+<h1>Add a New Station</h1>
+<form method="post">
+    {% csrf_token %}
+    <!-- TODO: Add form fields for name, url, mount, enabled -->
+    <button type="submit">Add Station</button>
+</form>
+{% endblock %}

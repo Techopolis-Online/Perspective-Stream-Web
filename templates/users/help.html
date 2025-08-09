@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Help Center - Beyond the Gallery{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Help Center</h1>
+            <p class="text-muted">Learn how to get the most out of Beyond the Gallery and iOS shortcuts.</p>
+        </div>
+    </div>
+
+    <!-- Featured Articles Section -->
+    {% if featured_articles %}
+    <div class="row mt-4">
+        <div class="col-12">
+            <h2 class="h4">Featured Articles</h2>
+            <div class="row">
+                {% for article in featured_articles %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-center mb-3">
+                                <div class="featured-icon">
+                                    {% if article.category == 'basics' %}
+                                        <i class="bi bi-book fs-1"></i>
+                                    {% elif article.category == 'creating' %}
+                                        <i class="bi bi-lightning-charge fs-1"></i>
+                                    {% elif article.category == 'advanced' %}
+                                        <i class="bi bi-gear-wide-connected fs-1"></i>
+                                    {% elif article.category == 'troubleshooting' %}
+                                        <i class="bi bi-wrench fs-1"></i>
+                                    {% else %}
+                                        <i class="bi bi-question-circle fs-1"></i>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <h3 class="card-title h5 text-center">{{ article.title }}</h3>
+                            <p class="card-text text-center">
+                                {{ article.content|striptags|truncatewords:15 }}
+                            </p>
+                            <div class="text-center">
+                                <a href="{% url 'users:help_article_detail' article.slug %}" class="btn btn-primary btn-sm">
+                                    Read More
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Search Box -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-search"></i></span>
+                        <input type="text" id="articleSearch" class="form-control" placeholder="Search help articles...">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Article Categories -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="accordion" id="helpAccordion">
+                {% for category_key, category_data in articles_by_category.items %}
+                    {% if category_data.articles %}
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="heading{{ category_key }}">
+                            <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" 
+                                   type="button" data-bs-toggle="collapse" 
+                                   data-bs-target="#collapse{{ category_key }}" 
+                                   aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" 
+                                   aria-controls="collapse{{ category_key }}">
+                                {{ category_data.name }} 
+                                <span class="badge bg-secondary ms-2">{{ category_data.articles.count }}</span>
+                            </button>
+                        </h2>
+                        <div id="collapse{{ category_key }}" 
+                             class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" 
+                             aria-labelledby="heading{{ category_key }}" 
+                             data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <div class="list-group article-list">
+                                    {% for article in category_data.articles %}
+                                    <a href="{% url 'users:help_article_detail' article.slug %}" 
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center article-item">
+                                        <div>
+                                            <h3 class="h6 mb-1">{{ article.title }}</h3>
+                                            <p class="text-muted small mb-0">{{ article.content|striptags|truncatewords:10 }}</p>
+                                        </div>
+                                        <span class="badge bg-primary rounded-pill">
+                                            <i class="bi bi-arrow-right"></i>
+                                        </span>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Still Need Help Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card bg-light border-0 rounded-3">
+                <div class="card-body text-center py-4">
+                    <h2 class="h4">Still Need Help?</h2>
+                    <p>Can't find what you're looking for? We're here to help.</p>
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'users:contact' %}" class="btn btn-primary">
+                            <i class="bi bi-envelope me-2"></i>Contact Support
+                        </a>
+                        <a href="{% url 'users:feedback' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-chat-dots me-2"></i>Send Feedback
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.featured-icon {
+    width: 70px;
+    height: 70px;
+    background: rgba(var(--bs-primary-rgb), 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--bs-primary);
+}
+
+.dark-mode .featured-icon {
+    background: rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.article-list .article-item:hover {
+    background-color: rgba(var(--bs-primary-rgb), 0.05);
+}
+
+.article-list .article-item .badge {
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+
+.article-list .article-item:hover .badge {
+    opacity: 1;
+    transform: translateX(3px);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('articleSearch');
+    const articleItems = document.querySelectorAll('.article-item');
+    
+    searchInput.addEventListener('keyup', function() {
+        const searchQuery = this.value.toLowerCase();
+        
+        articleItems.forEach(item => {
+            const title = item.querySelector('.h6').textContent.toLowerCase();
+            const description = item.querySelector('.text-muted').textContent.toLowerCase();
+            
+            if (title.includes(searchQuery) || description.includes(searchQuery)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+        
+        // Show all accordion sections when searching
+        if (searchQuery.length > 0) {
+            document.querySelectorAll('.accordion-collapse').forEach(section => {
+                section.classList.add('show');
+            });
+        }
+    });
+});
+</script>
+{% endblock %}

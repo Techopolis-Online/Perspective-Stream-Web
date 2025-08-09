@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Create Broadcast | Perspective Stream{% endblock %}
+{% block content %}
+<h1>Create a New Broadcast</h1>
+<form method="post">
+    {% csrf_token %}
+    <!-- TODO: Add form fields for title, description, category, tags, start_time, privacy -->
+    <button type="submit">Create Broadcast</button>
+</form>
+{% endblock %}

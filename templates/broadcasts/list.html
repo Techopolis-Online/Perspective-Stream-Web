@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Broadcasts | Perspective Stream{% endblock %}
+{% block content %}
+<h1>Your Broadcasts</h1>
+<ul>
+    {% for broadcast in broadcasts %}
+    <li>
+        <strong>{{ broadcast.title }}</strong> ({{ broadcast.privacy }})<br>
+        {{ broadcast.start_time|date:"Y-m-d H:i" }}<br>
+        <a href="#">Edit</a>
+    </li>
+    {% empty %}
+    <li>No broadcasts found.</li>
+    {% endfor %}
+</ul>
+<a href="{% url 'broadcast_create' %}">Create New Broadcast</a>
+{% endblock %}

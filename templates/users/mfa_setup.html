@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Setup Two-Factor Authentication{% endblock %}
+
+{% block extra_css %}
+<style>
+    .mfa-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 2rem;
+    }
+    
+    .mfa-steps {
+        margin-bottom: 2rem;
+    }
+    
+    .mfa-step {
+        padding: 1.5rem;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        background: #f9f9f9;
+    }
+    
+    .mfa-step.active {
+        border-color: #007bff;
+        background: #f0f8ff;
+    }
+    
+    .qr-code {
+        text-align: center;
+        padding: 1rem;
+        background: white;
+        border-radius: 8px;
+        margin: 1rem 0;
+    }
+    
+    .qr-code img {
+        max-width: 200px;
+        height: auto;
+    }
+    
+    .verification-input {
+        text-align: center;
+        font-size: 1.2em;
+        letter-spacing: 0.5em;
+        max-width: 200px;
+        margin: 0 auto;
+    }
+    
+    .alert-enforcement {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+    }
+    
+    .alert-enforcement h2 {
+        margin: 0 0 0.5rem 0;
+        color: #856404;
+        font-size: 1.25rem;
+    }
+    
+    .alert-success h2 {
+        color: #155724;
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .mfa-step h2 {
+        color: #495057;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+    }
+    
+    .mfa-step h3 {
+        color: #495057;
+        font-size: 1.1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .mt-4 h2 {
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+        color: #495057;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="mfa-container">
+    <h1>{% if totp_device %}Two-Factor Authentication Status{% else %}Setup Two-Factor Authentication{% endif %}</h1>
+    
+    {% if requires_mfa %}
+    <div class="alert-enforcement">
+        <h2>Two-Factor Authentication Required</h2>
+        <p>Your account role requires two-factor authentication for enhanced security. Please complete the setup below to continue using the platform.</p>
+    </div>
+    {% endif %}
+    
+    {% if error %}
+    <div class="alert alert-danger">
+        {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if totp_device %}
+        <!-- MFA Already Enabled -->
+        <div class="alert alert-success">
+            <h2>Two-Factor Authentication Enabled</h2>
+            <p>Your account is protected with TOTP (Time-based One-Time Password) authentication.</p>
+        </div>
+        
+        <div class="mfa-step">
+            <h3>Authentication App</h3>
+            <p>You have successfully configured an authenticator app (like Google Authenticator, Authy, or Microsoft Authenticator) for your account.</p>
+            
+            <div class="btn-group">
+                <a href="{% url 'users:mfa_recovery_codes' %}" class="btn btn-primary">View Recovery Codes</a>
+                <a href="{% url 'users:mfa_status' %}" class="btn btn-secondary">MFA Settings</a>
+            </div>
+        </div>
+    {% else %}
+        <!-- MFA Setup Process -->
+        <div class="mfa-steps">
+            <div class="mfa-step active">
+                <h2>Step 1: Install an Authenticator App</h2>
+                <p>Download and install one of these authenticator apps on your mobile device:</p>
+                <ul>
+                    <li><strong>Google Authenticator</strong> (iOS/Android)</li>
+                    <li><strong>Authy</strong> (iOS/Android/Desktop)</li>
+                    <li><strong>Microsoft Authenticator</strong> (iOS/Android)</li>
+                    <li><strong>1Password</strong> (if you have a subscription)</li>
+                </ul>
+            </div>
+            
+            <div class="mfa-step active">
+                <h2>Step 2: Scan the QR Code</h2>
+                <p>Open your authenticator app and scan this QR code:</p>
+                
+                {% if qr_code %}
+                <div class="qr-code">
+                    <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code for 2FA Setup">
+                </div>
+                {% endif %}
+                
+                <p><small>Can't scan the code? You can manually enter this key in your app instead: <strong>{{ device.key }}</strong></small></p>
+            </div>
+            
+            <div class="mfa-step active">
+                <h2>Step 3: Enter Verification Code</h2>
+                <p>Enter the 6-digit code from your authenticator app to complete setup:</p>
+                
+                <form method="post" class="text-center">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <input type="text" name="token" class="form-control verification-input" 
+                               placeholder="000000" maxlength="6" pattern="[0-9]{6}" 
+                               autocomplete="off" required autofocus>
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-lg">Verify & Enable 2FA</button>
+                </form>
+            </div>
+        </div>
+    {% endif %}
+    
+    <div class="mt-4">
+        <h2>Important Security Notes</h2>
+        <ul>
+            <li>Keep your authenticator app secure and backed up</li>
+            <li>You'll receive recovery codes after setup - store them safely</li>
+            <li>You'll need your authenticator app to log in after enabling 2FA</li>
+            {% if requires_mfa %}
+            <li><strong>This setup is required for your account role</strong></li>
+            {% endif %}
+        </ul>
+    </div>
+    
+    <div class="text-center mt-4">
+        <a href="{% url 'users:dashboard' %}" class="btn btn-link">Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+// Auto-focus and format the token input
+document.addEventListener('DOMContentLoaded', function() {
+    const tokenInput = document.querySelector('input[name="token"]');
+    if (tokenInput) {
+        tokenInput.addEventListener('input', function() {
+            // Remove non-numeric characters
+            this.value = this.value.replace(/\D/g, '');
+            // Limit to 6 digits
+            if (this.value.length > 6) {
+                this.value = this.value.slice(0, 6);
+            }
+        });
+        
+        // Auto-submit when 6 digits are entered
+        tokenInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                // Small delay to let user see the complete code
+                setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

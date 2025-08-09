@@ -1,0 +1,348 @@
+    {% extends "base.html" %}
+
+{% block title %}Set Up Two-Factor Authentication - Beyond the Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .setup-card {
+        max-width: 600px;
+        margin: 0 auto;
+    }
+    
+    .method-option {
+        border: 2px solid #dee2e6;
+        border-radius: 12px;
+        padding: 20px;
+        margin: 15px 0;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        background: white;
+    }
+    
+    .method-option:hover {
+        border-color: #007AFF;
+        background-color: #f8f9ff;
+    }
+    
+    .method-option:focus-within {
+        border-color: #007AFF;
+        background-color: #f0f7ff;
+        outline: 2px solid #007AFF;
+        outline-offset: 2px;
+    }
+    
+    .method-option.selected {
+        border-color: #007AFF;
+        background-color: #f0f7ff;
+    }
+    
+    .method-radio-label {
+        display: block;
+        cursor: pointer;
+        margin-bottom: 15px;
+    }
+    
+    .method-radio-label input[type="radio"] {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        accent-color: #007AFF;
+    }
+    
+    .method-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+        color: #007AFF;
+    }
+    
+    .method-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0;
+        text-align: center;
+        color: #212529;
+    }
+    
+    .accessibility-note h3 {
+        font-size: 1.125rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+        color: #495057;
+    }
+    
+    .method-description {
+        text-align: center;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .description-text {
+        margin-bottom: 12px;
+        line-height: 1.4;
+    }
+    
+    .benefits-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+    }
+    
+    .benefits-list li {
+        background: #e7f5e7;
+        color: #28a745;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-weight: 500;
+        font-size: 0.85rem;
+    }
+    
+    .benefits-list li::before {
+        content: "* ";
+        font-weight: bold;
+    }
+    
+    .method-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+    
+    .enforcement-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .grace-period-info {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .setup-steps {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .step-number {
+        background: #007AFF;
+        color: white;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .accessibility-note {
+        background: #e7f1ff;
+        border: 1px solid #b8d4ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+        font-size: 0.9rem;
+    }
+    
+    .benefits-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+    }
+    
+    /* Responsive design for mobile */
+    @media (max-width: 768px) {
+        .method-option {
+            padding: 15px;
+        }
+        
+        .method-radio-label input[type="radio"] {
+            top: 10px;
+            right: 10px;
+        }
+        
+        .benefits-list {
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="setup-card">
+        <div class="text-center mb-4">
+            <h1>Set Up Two-Factor Authentication</h1>
+            <p class="text-muted">Add an extra layer of security to your account</p>
+        </div>
+
+        {% if requires_2fa and not user.two_factor_enabled %}
+            {% if not is_in_grace_period %}
+                <div class="grace-period-info" role="alert">
+                    <h2>Two-Factor Authentication Required</h2>
+                    <p>Your account requires two-factor authentication. Your grace period has expired and you must set up 2FA to continue using the system.</p>
+                </div>
+            {% else %}
+                <div class="enforcement-warning" role="alert">
+                    <h2>Action Required</h2>
+                    <p>As a privileged user, you have <strong>{{ days_left }} day{{ days_left|pluralize }}</strong> remaining to set up two-factor authentication.</p>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        <div class="setup-steps">
+            <h2>How it works:</h2>
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div>
+                    <strong>Choose your method:</strong> Select between authenticator app or email codes
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div>
+                    <strong>Complete setup:</strong> Follow the instructions to configure your chosen method
+                </div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div>
+                    <strong>Save backup codes:</strong> Store your recovery codes in a safe place
+                </div>
+            </div>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            
+            <fieldset>
+                <legend class="h2 mb-3">Choose Your Authentication Method:</legend>
+                
+                {% for value, label in form.method.field.choices %}
+                <div class="method-option" onclick="selectMethod('{{ value }}')">
+                    <label for="id_method_{{ forloop.counter0 }}" class="method-radio-label">
+                        <input type="radio" 
+                               name="{{ form.method.name }}" 
+                               value="{{ value }}" 
+                               id="id_method_{{ forloop.counter0 }}"
+                               {% if form.method.value == value %}checked{% endif %}>
+                        
+                        <div class="method-icon text-center">
+                            {% if value == 'totp' %}
+                                <i class="fas fa-mobile-alt" aria-hidden="true"></i>
+                            {% elif value == 'email' %}
+                                <i class="fas fa-envelope" aria-hidden="true"></i>
+                            {% endif %}
+                        </div>
+                        
+                        <h3 class="method-title">{{ label }}</h3>
+                    </label>
+                    
+                    <div class="method-description">
+                        {% if value == 'totp' %}
+                            <p>Use apps like Google Authenticator, Authy, or 1Password to generate codes.</p>
+                            <ul class="benefits-list">
+                                <li>Works offline</li>
+                                <li>Most secure</li>
+                                <li>Industry standard</li>
+                            </ul>
+                        {% elif value == 'email' %}
+                            <p>Receive verification codes via email when you log in.</p>
+                            <ul class="benefits-list">
+                                <li>No app required</li>
+                                <li>Easy to use</li>
+                                <li>Works anywhere</li>
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if form.method.errors %}
+                    <div class="alert alert-danger mt-2" role="alert">
+                        {% for error in form.method.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </fieldset>
+
+            <div class="accessibility-note">
+                <h3>Accessibility & Security Notes:</h3>
+                <ul class="mb-0">
+                    <li>Both methods support backup codes for account recovery</li>
+                    <li>You'll receive {{ backup_codes_count|default:10 }} single-use backup codes</li>
+                    <li>Backup codes work with screen readers and keyboard navigation</li>
+                    <li>You can change your 2FA method later in settings</li>
+                </ul>
+            </div>
+
+            <div class="d-grid gap-2 mt-4">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Continue Setup
+                </button>
+                {% if not requires_2fa or is_in_grace_period %}
+                    <a href="{% url 'users:settings' %}" class="btn btn-outline-secondary">
+                        Cancel
+                    </a>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function selectMethod(value) {
+    const radio = document.querySelector(`input[value="${value}"]`);
+    if (radio) {
+        radio.checked = true;
+        updateSelection();
+    }
+}
+
+function updateSelection() {
+    const options = document.querySelectorAll('.method-option');
+    const radios = document.querySelectorAll('input[name="method"]');
+    
+    options.forEach((option, index) => {
+        const radio = radios[index];
+        option.classList.toggle('selected', radio.checked);
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateSelection();
+    
+    // Handle radio button changes
+    document.querySelectorAll('input[name="method"]').forEach(radio => {
+        radio.addEventListener('change', updateSelection);
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Two-Factor Authentication - Beyond the Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .auth-card {
+        max-width: 500px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        padding: 30px;
+    }
+    
+    .user-info {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+        text-align: center;
+    }
+    
+    .method-selector {
+        margin-bottom: 20px;
+    }
+    
+    .code-input {
+        text-align: center;
+        font-size: 20px;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        padding: 15px;
+        border: 2px solid #007AFF;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    
+    .auth-methods {
+        background: #e7f1ff;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .method-option {
+        cursor: pointer;
+        padding: 10px;
+        border-radius: 6px;
+        margin: 5px 0;
+        border: 1px solid transparent;
+    }
+    
+    .method-option:hover {
+        background: #f0f7ff;
+        border-color: #007AFF;
+    }
+    
+    .email-code-section {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .backup-code-section {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+    }
+    
+    .help-links {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 20px;
+        text-align: center;
+    }
+    
+    .security-notice {
+        background: #e9ecef;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 15px;
+        font-size: 0.9rem;
+        color: #495057;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid d-flex align-items-center justify-content-center min-vh-100 bg-light">
+    <div class="auth-card">
+        <div class="text-center mb-4">
+            <h1>Two-Factor Authentication</h1>
+            <p class="text-muted">Complete your secure login</p>
+        </div>
+
+        {% if user %}
+            <div class="user-info">
+                <strong>{{ user.get_full_name|default:user.username }}</strong>
+                <br>
+                <small class="text-muted">{{ user.email }}</small>
+            </div>
+        {% endif %}
+
+        <form method="post" novalidate id="2fa-form">
+            {% csrf_token %}
+            
+            <div class="mb-3">
+                <label for="{{ form.method.id_for_label }}" class="form-label">
+                    {{ form.method.label }}
+                </label>
+                {% render_field form.method class="form-select" onchange="toggleMethodInfo()" %}
+                
+                {% if form.method.errors %}
+                    <div class="alert alert-danger mt-2" role="alert">
+                        {% for error in form.method.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Dynamic method info sections -->
+            <div id="totp-info" class="auth-methods" style="display: none;">
+                <h2>Authenticator App</h2>
+                <p>Open your authenticator app and enter the current 6-digit code:</p>
+                <ul class="small mb-0">
+                    <li>Google Authenticator</li>
+                    <li>Authy</li>
+                    <li>1Password</li>
+                    <li>Or any TOTP-compatible app</li>
+                </ul>
+            </div>
+
+            <div id="email-info" class="email-code-section" style="display: none;">
+                <h2>Email Code</h2>
+                <p>We'll send a verification code to your email address.</p>
+                <button type="submit" name="send_email_code" value="1" class="btn btn-outline-primary btn-sm">
+                    Send Email Code
+                </button>
+            </div>
+
+            <div id="backup-info" class="backup-code-section" style="display: none;">
+                <h2>Backup Code</h2>
+                <p><strong>Warning:</strong> Each backup code can only be used once.</p>
+                <p class="small mb-0">
+                    {% if backup_codes_available %}
+                        You have backup codes available for account recovery.
+                    {% else %}
+                        No backup codes available. Contact support if you need assistance.
+                    {% endif %}
+                </p>
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.token.id_for_label }}" class="form-label">
+                    {{ form.token.label }}
+                </label>
+                {% render_field form.token class="form-control code-input" placeholder="Enter code" autocomplete="one-time-code" %}
+                
+                {% if form.token.errors %}
+                    <div class="alert alert-danger mt-2" role="alert">
+                        {% for error in form.token.errors %}
+                            {{ error }}
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger" role="alert">
+                    {% for error in form.non_field_errors %}
+                        {{ error }}
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Verify & Sign In
+                </button>
+                <a href="{% url 'users:login' %}" class="btn btn-outline-secondary">
+                    Back to Login
+                </a>
+            </div>
+        </form>
+
+        <div class="help-links">
+            <h2>Need Help?</h2>
+            <div class="d-grid gap-2">
+                <small>
+                    <a href="{% url 'help:help' %}" class="text-decoration-none">
+                        Two-Factor Authentication Guide
+                    </a>
+                </small>
+                <small>
+                    <a href="{% url 'contact:contact_form' %}" class="text-decoration-none">
+                        Contact Support
+                    </a>
+                </small>
+            </div>
+        </div>
+
+        <div class="security-notice">
+            <small>
+                <strong>Security Notice:</strong> This verification helps protect your account from unauthorized access. 
+                Never share verification codes with anyone, including Beyond the Gallery support.
+            </small>
+        </div>
+    </div>
+</div>
+
+<script>
+function toggleMethodInfo() {
+    const methodSelect = document.getElementById('id_method');
+    const selectedMethod = methodSelect.value;
+    
+    // Hide all method info sections
+    document.getElementById('totp-info').style.display = 'none';
+    document.getElementById('email-info').style.display = 'none';
+    document.getElementById('backup-info').style.display = 'none';
+    
+    // Show relevant section
+    if (selectedMethod === 'totp') {
+        document.getElementById('totp-info').style.display = 'block';
+    } else if (selectedMethod === 'email') {
+        document.getElementById('email-info').style.display = 'block';
+    } else if (selectedMethod === 'backup') {
+        document.getElementById('backup-info').style.display = 'block';
+    }
+    
+    // Update placeholder and input attributes
+    const tokenInput = document.getElementById('id_token');
+    if (selectedMethod === 'totp') {
+        tokenInput.placeholder = '000000';
+        tokenInput.maxLength = 6;
+        tokenInput.pattern = '[0-9]{6}';
+    } else if (selectedMethod === 'email') {
+        tokenInput.placeholder = '000000';
+        tokenInput.maxLength = 6;
+        tokenInput.pattern = '[0-9]{6}';
+    } else if (selectedMethod === 'backup') {
+        tokenInput.placeholder = 'Enter backup code';
+        tokenInput.maxLength = 8;
+        tokenInput.pattern = '[A-Z0-9]{8}';
+    }
+    
+    // Focus the input
+    tokenInput.focus();
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    toggleMethodInfo();
+    
+    // Format token input
+    const tokenInput = document.getElementById('id_token');
+    
+    tokenInput.addEventListener('input', function(e) {
+        const method = document.getElementById('id_method').value;
+        
+        if (method === 'totp' || method === 'email') {
+            // Only allow digits for TOTP and email codes
+            this.value = this.value.replace(/\D/g, '');
+        } else if (method === 'backup') {
+            // Allow uppercase letters and digits for backup codes
+            this.value = this.value.replace(/[^A-Z0-9]/g, '').substring(0, 8);
+        }
+    });
+    
+    // Auto-submit when code is complete
+    tokenInput.addEventListener('input', function(e) {
+        const method = document.getElementById('id_method').value;
+        
+        if ((method === 'totp' || method === 'email') && this.value.length === 6) {
+            // Small delay for TOTP/email codes
+            setTimeout(() => {
+                this.form.submit();
+            }, 500);
+        } else if (method === 'backup' && this.value.length === 8) {
+            // Submit backup codes immediately
+            this.form.submit();
+        }
+    });
+    
+    // Handle method changes
+    document.getElementById('id_method').addEventListener('change', toggleMethodInfo);
+});
+</script>
+{% endblock %}

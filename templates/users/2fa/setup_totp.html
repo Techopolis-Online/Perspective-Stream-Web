@@ -1,0 +1,377 @@
+{% extends "base.html" %}
+{% load widget_tweaks %}
+
+{% block title %}Set Up Authenticator App - Beyond the Gallery{% endblock %}
+
+{% block extra_css %}
+<style>
+    .setup-card {
+        max-width: 700px;
+        margin: 0 auto;
+    }
+    
+    .qr-section {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 30px;
+        text-align: center;
+        margin: 20px 0;
+        border: 2px solid #dee2e6;
+    }
+    
+    .qr-code-container {
+        background: white;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+        display: inline-block;
+        border: 1px solid #dee2e6;
+    }
+    .qr-code-container img,
+    .qr-code-container svg {
+        width: 200px;
+        height: 200px;
+        max-width: 100%;
+        image-rendering: crisp-edges;
+        image-rendering: -webkit-optimize-contrast;
+    }
+    
+    .secret-key {
+        background: #e9ecef;
+        padding: 15px;
+        border-radius: 6px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        word-break: break-all;
+        margin: 15px 0;
+        position: relative;
+    }
+    
+    .copy-button {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        background: #007AFF;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        border-radius: 4px;
+        font-size: 12px;
+        cursor: pointer;
+    }
+    
+    .setup-steps {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .step-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    
+    .step-number {
+        background: #ffc107;
+        color: #212529;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .app-recommendations {
+        background: #e7f1ff;
+        border: 1px solid #b8d4ff;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .app-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        padding: 10px;
+        background: white;
+        border-radius: 6px;
+        border: 1px solid #dee2e6;
+    }
+    
+    .app-icon {
+        font-size: 1.5rem;
+        margin-right: 15px;
+    }
+    
+    .verification-section {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .token-input {
+        text-align: center;
+        font-size: 24px;
+        font-family: 'Courier New', monospace;
+        letter-spacing: 2px;
+        padding: 15px;
+        border: 2px solid #007AFF;
+        border-radius: 8px;
+        margin: 15px 0;
+    }
+    
+    .accessibility-instructions {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 20px 0;
+        font-size: 0.9rem;
+    }
+    
+    @media (max-width: 768px) {
+        .qr-section {
+            padding: 15px;
+        }
+        
+        .qr-code-container {
+            padding: 10px;
+        }
+        .qr-code-container img,
+        .qr-code-container svg {
+            width: 180px;
+            height: 180px;
+        }
+        
+        .secret-key {
+            font-size: 12px;
+        }
+        
+        .token-input {
+            font-size: 20px;
+            letter-spacing: 1px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="setup-card">
+        <div class="text-center mb-4">
+            <h1>Set Up Authenticator App</h1>
+            <p class="text-muted">Secure your account with time-based codes</p>
+        </div>
+
+        <div class="app-recommendations">
+            <h2>Recommended Authenticator Apps</h2>
+            <div class="app-item">
+                <div>
+                    <strong>Google Authenticator</strong> - Free, simple, and widely supported
+                    <br><small class="text-muted">Available for iOS and Android</small>
+                </div>
+            </div>
+            <div class="app-item">
+                <div>
+                    <strong>Authy</strong> - Multi-device sync with cloud backup
+                    <br><small class="text-muted">Available for iOS, Android, and Desktop</small>
+                </div>
+            </div>
+            <div class="app-item">
+                <div>
+                    <strong>1Password</strong> - Integrated with password manager
+                    <br><small class="text-muted">Premium app with advanced features</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="setup-steps">
+            <h2>Setup Instructions</h2>
+            <div class="step-item">
+                <div class="step-number">1</div>
+                <div>Open your authenticator app and add a new account</div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">2</div>
+                <div>Scan the QR code below OR manually enter the secret key</div>
+            </div>
+            <div class="step-item">
+                <div class="step-number">3</div>
+                <div>Enter the 6-digit code from your app to verify the setup</div>
+            </div>
+        </div>
+
+        <div class="qr-section">
+            <h2>Scan this QR Code</h2>
+            
+            <div class="qr-code-container" role="img" aria-label="2-factor QR code">
+                {% if qr_code_data_uri %}
+                    <img src="{{ qr_code_data_uri }}" alt="QR code for authenticator app setup" />
+                {% else %}
+                    {{ qr_code_svg|safe }}
+                {% endif %}
+            </div>
+            
+            <p class="text-muted">
+                Point your authenticator app's camera at this QR code to add your account.
+            </p>
+
+            <div class="accessibility-instructions">
+                <h3>Can't scan the QR code?</h3>
+                <p>If you can't scan the QR code, you can manually enter this secret key in your authenticator app:</p>
+            </div>
+
+            <h3>Manual Entry</h3>
+            <div class="secret-key" role="textbox" tabindex="0" aria-label="Secret key for manual entry">
+                {{ secret_key }}
+                <button type="button" class="copy-button" onclick="copySecretKey()" aria-label="Copy secret key to clipboard">
+                    Copy
+                </button>
+            </div>
+
+            <div class="row text-start">
+                <div class="col-md-6">
+                    <strong>Account Name:</strong><br>
+                    <code>{{ account_name }}</code>
+                </div>
+                <div class="col-md-6">
+                    <strong>Issuer:</strong><br>
+                    <code>{{ issuer_name }}</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="verification-section">
+            <h2>Verify Setup</h2>
+            <p>Enter the 6-digit code from your authenticator app to complete setup:</p>
+
+            <form method="post" novalidate>
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.token.id_for_label }}" class="visually-hidden">
+                        {{ form.token.label }}
+                    </label>
+                    {% render_field form.token class="form-control token-input" placeholder="000000" autocomplete="one-time-code" inputmode="numeric" maxlength="6" %}
+                    
+                    {% if form.token.help_text %}
+                        <div id="token-help" class="form-text">{{ form.token.help_text }}</div>
+                    {% endif %}
+                    
+                    {% if form.token.errors %}
+                        <div class="alert alert-danger mt-2" role="alert">
+                            {% for error in form.token.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-success btn-lg">
+                        Complete Setup
+                    </button>
+                    <a href="{% url 'users:2fa_setup' %}" class="btn btn-outline-secondary">
+                        Back to Setup Options
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="accessibility-instructions">
+            <h2>Accessibility Information</h2>
+            <ul>
+                <li>The QR code can be bypassed by using the manual secret key entry</li>
+                <li>All authenticator apps support keyboard navigation and screen readers</li>
+                <li>The verification code input supports voice input and copy/paste</li>
+                <li>Backup codes will be provided after setup for account recovery</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+function copySecretKey() {
+    const secretKey = '{{ secret_key }}';
+    navigator.clipboard.writeText(secretKey).then(function() {
+        const button = document.querySelector('.copy-button');
+        const originalText = button.textContent;
+        button.textContent = 'Copied!';
+        button.style.background = '#28a745';
+        
+        setTimeout(function() {
+            button.textContent = originalText;
+            button.style.background = '#007AFF';
+        }, 2000);
+    }).catch(function(err) {
+        console.error('Could not copy text: ', err);
+        // Fallback for older browsers
+        const textArea = document.createElement('textarea');
+        textArea.value = secretKey;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            const button = document.querySelector('.copy-button');
+            button.textContent = 'Copied!';
+            button.style.background = '#28a745';
+            setTimeout(function() {
+                button.textContent = 'Copy';
+                button.style.background = '#007AFF';
+            }, 2000);
+        } catch(err) {
+            console.error('Fallback copy failed: ', err);
+        }
+        document.body.removeChild(textArea);
+    });
+}
+
+// Enhance accessibility and format token input as user types
+document.addEventListener('DOMContentLoaded', function() {
+    // Hide raw SVG from assistive tech since container is labeled as the image
+    const qrSvg = document.querySelector('.qr-code-container svg');
+    if (qrSvg) {
+        qrSvg.setAttribute('aria-hidden', 'true');
+        qrSvg.setAttribute('focusable', 'false');
+    }
+
+    const tokenInput = document.querySelector('.token-input');
+    
+    if (tokenInput) {
+        // Focus the input
+        tokenInput.focus();
+        
+        // Format input
+        tokenInput.addEventListener('input', function(e) {
+            // Only allow digits
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 6 digits
+            if (this.value.length > 6) {
+                this.value = this.value.substring(0, 6);
+            }
+        });
+        
+        // Auto-submit when 6 digits are entered
+        tokenInput.addEventListener('input', function(e) {
+            if (this.value.length === 6) {
+                // Small delay to allow user to see the complete code
+                setTimeout(() => {
+                    this.form.submit();
+                }, 500);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
